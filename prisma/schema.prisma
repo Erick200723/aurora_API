@@ -1,0 +1,77 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+//usuarios do sistema (familiares, admin, idosos)
+model User {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+
+  email String @unique
+  password String
+  name String
+  role String // "FAMILIAR" | "ADMIN" | "IDOSO"
+  status String @default("PENDING") 
+  planPaid  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  elders Elder[]@relation("ChiefElders")
+}
+//idosos cadastrados no sistema
+model Elder {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+  cpf String @unique
+  name String
+  chiefId String @db.ObjectId
+  chief User @relation("ChiefElders", fields: [chiefId], references: [id])
+  age Int
+  emergencyContact String
+  medicalConditions String[]
+  medications String[]
+
+  createdAt DateTime @default(now())
+}
+
+// lembretes de alimentacao, medicacao, atividades
+model Reminder{
+   id         String   @id @map("_id") @default(auto()) @db.ObjectId
+  elderId    String   @db.ObjectId
+  dayOfWeek  Int      // 0 (Sunday) .. 6 (Saturday)
+  slot       Int      // 1..5 (max 5 per day)
+  type       String   // "ALIMENTACAO" | "MEDICACAO" | "ATIVIDADE"
+  title      String
+  time       String?  // "08:00"
+  active     Boolean  @default(true)
+  approved   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+//emergencias acionadas pelos idosos
+model Emergency{
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  elderId   String   @db.ObjectId
+  at        DateTime @default(now())
+  location  String?  // opicional
+  resolved  Boolean  @default(false)
+}
+//audios enviados pelos idosos para analise
+model Audio {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  elderId   String   @db.ObjectId
+  url       String
+  duration  Int      // seconds
+  transcript String?
+  status    String   // "PENDING" | "APPROVED" | "REJECTED"
+  createdAt DateTime @default(now())
+}
+
+model VerificationCode {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+  email String
+  code String
+  expiresAt DateTime
+  used Boolean @default(false)
+  createdAt DateTime @default(now())
+}
