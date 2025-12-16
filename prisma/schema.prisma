@@ -19,7 +19,30 @@ model User {
   planPaid  Boolean  @default(false)
   createdAt DateTime @default(now())
   elders Elder[]@relation("ChiefElders")
+  // quando este user é o colaborador
+  collaborations Collaborator[] @relation("CollaboratorUser")
+
+  // quando este user é o chief de colaboradores
+  collaborators Collaborator[] @relation("CollaboratorChief")
 }
+
+model Collaborator {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation("CollaboratorUser", fields: [userId], references: [id])
+
+  elderId String @db.ObjectId
+  elder   Elder  @relation(fields: [elderId], references: [id])
+
+  chiefId String @db.ObjectId
+  chief   User   @relation("CollaboratorChief", fields: [chiefId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+
+
 //idosos cadastrados no sistema
 model Elder {
   id String @id @map("_id") @default(auto()) @db.ObjectId
@@ -28,9 +51,11 @@ model Elder {
   chiefId String @db.ObjectId
   chief User @relation("ChiefElders", fields: [chiefId], references: [id])
   age Int
+  birthData DateTime? 
   emergencyContact String
   medicalConditions String[]
   medications String[]
+  collaborators Collaborator[]
 
   createdAt DateTime @default(now())
 }

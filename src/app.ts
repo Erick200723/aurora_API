@@ -16,6 +16,7 @@ import jwtPlugin from './plugins/jwt.js';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import elderRoutes from './modules/elder/elder.routes.js';
+import collaboratorRoutes from './collaborator/collaborator.router.js';
 
 const server = fastify({
   logger: true
@@ -30,9 +31,22 @@ await server.register(swagger, {
     info: {
       title: 'Aroura IA API',
       version: '1.0.0'
-    }
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
   },
-  // 🔴 ISSO AQUI É O QUE ESTAVA FALTANDO
   transform: jsonSchemaTransform
 });
 
@@ -45,6 +59,8 @@ await server.register(multipart);
 
 await server.register(prismaPlugin);
 await server.register(jwtPlugin);
+await server.register(collaboratorRoutes, { prefix: '/collaborators' });
+
 
 await server.register(authRoutes, { prefix: '/auth' });
 await server.register(elderRoutes, { prefix: '/elders' });

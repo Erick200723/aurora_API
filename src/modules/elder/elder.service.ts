@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import CreateElderInput from '../../interfaces/elder.interface.js';
-import RegisterCollaboratorInput from '../../interfaces/Collaborator.interface.js';
 
 const prisma = new PrismaClient();
 
@@ -27,48 +26,29 @@ export async function CreateElder(data: CreateElderInput) {
 
     userId = user.id;
   }
+  const exists= await prisma.elder.findUnique({
+      where: {cpf: data.cpf}
+    });
+
+    if (exists) {
+      throw new Error('Elder with this CPF already exists');
+    }
 
   const elder = await prisma.elder.create({
     data: {
-        name: data.name,
-        cpf: data.cpf,
-        age: data.age,
-        emergencyContact: data.emergencyContact,
-        chiefId: data.chiefId,
-        medicalConditions: data.medicalConditions ?? [],
-        medications: data.medications ?? [],
-        ...(data.birthData && {
-        birthData: new Date(data.birthData)
-        }),
-        ...(userId && {
-        userId
-        })
-    }
-    });
+    name: data.name,
+    cpf: data.cpf,
+    age: data.age,
+    emergencyContact: data.emergencyContact,
+    chiefId: data.chiefId,
+    medicalConditions: data.medicalConditions ?? [],
+    medications: data.medications ?? [],
+    ...(data.birthData && !isNaN(Date.parse(data.birthData)) && {
+      birthData: new Date(data.birthData)
+    })
+  }
+  });
     return elder;
 }
 
-export async function registerCollaborator(data: RegisterCollaboratorInput) {
-  const elder = await prisma.elder.findUnique({
-    where: { cpf: data.elderCpf },
-    include: { chief: true }
-  });
 
-  if (!elder) {
-    throw new Error('Elder not found');
-  }
-
-  if (!elder.chief.planPaid) {
-    throw new Error('Plan not paid');
-  }
-
-  return prisma.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      password: await bcrypt.hash(data.password, 10),
-      role: 'FAMILIAR_COLABORADOR',
-      status: 'PENDING'
-    }
-  });
-}
