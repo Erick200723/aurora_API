@@ -50,5 +50,3 @@ export async function CreateElder(data: CreateElderInput) {
   });
     return elder;
 }
-
-

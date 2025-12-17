@@ -16,7 +16,7 @@ import jwtPlugin from './plugins/jwt.js';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import elderRoutes from './modules/elder/elder.routes.js';
-import collaboratorRoutes from './collaborator/collaborator.router.js';
+import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
 
 const server = fastify({
   logger: true

@@ -10,7 +10,6 @@ import {
 
 import {
   registerCollaborator,
-  verifyCollaborator
 } from './collaborator.service.js';
 
 export default async function collaboratorRoutes(
@@ -27,28 +26,6 @@ export default async function collaboratorRoutes(
     },
     async (req) => {
       return registerCollaborator(req.body as RegisterCollaboratorBody);
-    }
-  );
-
-  app.post(
-    '/verify',
-    {
-      schema: {
-        body: verifyCollaboratorSchema
-      }
-    },
-    async (req) => {
-      const user = await verifyCollaborator(
-        (req.body as VerifyCollaboratorBody).email,
-        (req.body as VerifyCollaboratorBody).code
-      );
-
-      return {
-        token: fastify.jwt.sign({
-          id: user.id,
-          role: user.role
-        })
-      };
     }
   );
 }
