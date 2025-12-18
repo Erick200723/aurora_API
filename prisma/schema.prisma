@@ -100,3 +100,13 @@ model VerificationCode {
   used Boolean @default(false)
   createdAt DateTime @default(now())
 }
+
+model OTPResendLog {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+  email String
+  ip String
+  sentAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ip])
+}

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import {Prisma,PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { generateOTP, otpExpires } from '../../utils/otp.js';
-import { sendOTPEmail } from '../../utils/mail.js';
+import { sendOTPEmail, sendOTPexpiredEmail } from '../../utils/mail.js';
 
 const prisma = new PrismaClient();
 
@@ -114,12 +114,17 @@ export async function verifyCode(email: string, code: string) {
     where: {
       email,
       code,
-      used: false,
-      expiresAt: { gt: new Date() }
+      used: false
     }
   });
 
-  if (!record) throw new Error('Invalid or expired code');
+  if (!record) {
+    throw new Error('INVALID_CODE');
+  }
+
+  if (record.expiresAt < new Date()) {
+    throw new Error('CODE_EXPIRED');
+  }
 
   await prisma.verificationCode.update({
     where: { id: record.id },
@@ -131,18 +136,63 @@ export async function verifyCode(email: string, code: string) {
     data: { status: 'ACTIVE' }
   });
 
-  // 🔗 REGRA ESPECIAL PARA COLLABORATOR
-  if (user.role === 'FAMILIAR_COLABORADOR') {
-    const collaboratorExists = await prisma.collaborator.findFirst({
-      where: { userId: user.id }
-    });
-
-    if (!collaboratorExists) {
-      throw new Error('Collaborator not linked to any elder');
-    }
-  }
-
   return user;
 }
 
+export async function resendOTP(email: string, ip: string) {
+  return await prisma.$transaction(async (tx) => {
 
+    await checkResendLimit(email,tx, ip);
+
+    await tx.oTPResendLog.create({
+      data: { email, ip }
+    });
+
+    await tx.verificationCode.updateMany({
+      where: { email, used: false },
+      data: { used: true }
+    });
+
+    const code = generateOTP();
+
+    await tx.verificationCode.create({
+      data: {
+        email,
+        code,
+        expiresAt: otpExpires()
+      }
+    });
+
+    await sendOTPEmail(email, code);
+
+    return { message: 'New verification code sent' };
+  });
+}
+
+
+const RESEND_LIMIT = 3
+const RESEND_WINDOW_MINUTES = 10
+
+export async function checkResendLimit(
+  email:string,
+  tx:Prisma.TransactionClient,
+  ip: string
+){
+  const windowStart = new Date(
+    Date.now() - RESEND_WINDOW_MINUTES * 60 * 1000
+  );
+
+  const attempts = await tx.oTPResendLog
+.count({
+    where:{
+      email,
+      ip,
+       sentAt: {
+        gte: windowStart
+      }
+    }
+  });
+  if(attempts >= RESEND_LIMIT){
+    throw new Error('RESEND_LIMIT_EXCEEDED');
+  }
+}

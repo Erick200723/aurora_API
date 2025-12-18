@@ -11,7 +11,8 @@ import {
   registerFamiliar,
   loginUser,
   loginElder,
-  verifyCode
+  verifyCode,
+  resendOTP
 } from './auth.service.js';
 
 
@@ -52,5 +53,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
       data: { planPaid: true }
     });
   });
+  app.post('/resend', async (req) => {
+      const { email } = req.body as { email: string };
+      const ip = req.ip ?? 'unknown';
+
+      return resendOTP(email, ip);
+  });
+
+
 }
 

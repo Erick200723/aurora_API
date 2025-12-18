@@ -27,3 +27,8 @@ export const registerCollaboratorSchema = z.object({
   elderCpf: z.string().length(11)
 });
 
+export const resendOTPSchema = z.object({
+  email: z.string().email(),
+  ip: z.string().optional(),
+  tx: z.string().optional(),
+});

@@ -53,3 +53,16 @@ export async function sendOTPEmail(email: string, code: string) {
   }
 }
 
+export async function sendOTPexpiredEmail(email: string){
+  try{
+    await transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to: email,
+      subject: 'Código de verificação expirado - Aurora IA',
+    })
+  }catch(error){
+    console.error('❌ Erro ao enviar email OTP expirado:', error);
+    throw new Error('Failed to send expired verification email');
+  }
+}
+
