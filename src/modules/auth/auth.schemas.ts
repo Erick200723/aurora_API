@@ -29,6 +29,4 @@ export const registerCollaboratorSchema = z.object({
 
 export const resendOTPSchema = z.object({
   email: z.string().email(),
-  ip: z.string().optional(),
-  tx: z.string().optional(),
 });

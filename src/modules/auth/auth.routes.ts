@@ -4,7 +4,8 @@ import {
   registerSchema,
   loginSchema,
   verifyCodeSchema,
-  loginElderSchema
+  loginElderSchema,
+  resendOTPSchema
 } from './auth.schemas.js';
 
 import {
@@ -53,13 +54,16 @@ export default async function authRoutes(fastify: FastifyInstance) {
       data: { planPaid: true }
     });
   });
-  app.post('/resend', async (req) => {
-      const { email } = req.body as { email: string };
-      const ip = req.ip ?? 'unknown';
+ app.post(
+  '/resend-otp',
+  { schema: { body: resendOTPSchema } },
+  async (request) => {
+    const { email } = request.body;
+    const ip = request.ip;
 
-      return resendOTP(email, ip);
-  });
-
+    return resendOTP(email, ip);
+  }
+);
 
 }
 

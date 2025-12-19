@@ -1,9 +1,12 @@
 import {Prisma,PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { generateOTP, otpExpires } from '../../utils/otp.js';
-import { sendOTPEmail, sendOTPexpiredEmail } from '../../utils/mail.js';
+import { sendOTPEmail } from '../../utils/mail.js';
 
 const prisma = new PrismaClient();
+
+const RESEND_LIMIT = 3
+const RESEND_WINDOW_MINUTES = 10
 
 /**
  * REGISTRO DE FAMILIAR (COM OTP)
@@ -140,19 +143,21 @@ export async function verifyCode(email: string, code: string) {
 }
 
 export async function resendOTP(email: string, ip: string) {
-  return await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
+    await checkResendLimit(tx, email, ip);
 
-    await checkResendLimit(email,tx, ip);
-
+    // registra tentativa
     await tx.oTPResendLog.create({
       data: { email, ip }
     });
 
+    // invalida OTPs antigos
     await tx.verificationCode.updateMany({
       where: { email, used: false },
       data: { used: true }
     });
 
+    // gera novo OTP
     const code = generateOTP();
 
     await tx.verificationCode.create({
@@ -165,34 +170,31 @@ export async function resendOTP(email: string, ip: string) {
 
     await sendOTPEmail(email, code);
 
-    return { message: 'New verification code sent' };
+    return { message: 'Verification code resent' };
   });
 }
 
 
-const RESEND_LIMIT = 3
-const RESEND_WINDOW_MINUTES = 10
-
-export async function checkResendLimit(
-  email:string,
-  tx:Prisma.TransactionClient,
+async function checkResendLimit(
+  tx: Prisma.TransactionClient,
+  email: string,
   ip: string
-){
+) {
   const windowStart = new Date(
     Date.now() - RESEND_WINDOW_MINUTES * 60 * 1000
   );
 
-  const attempts = await tx.oTPResendLog
-.count({
-    where:{
+  const attempts = await tx.oTPResendLog.count({
+    where: {
       email,
       ip,
-       sentAt: {
+      sentAt: {
         gte: windowStart
       }
     }
   });
-  if(attempts >= RESEND_LIMIT){
+
+  if (attempts >= RESEND_LIMIT) {
     throw new Error('RESEND_LIMIT_EXCEEDED');
   }
 }
