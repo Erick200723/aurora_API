@@ -26,14 +26,25 @@ export async function registerCollaborator(data:RegisterCollaboratorInput ) {
       throw new Error('ELDER_NOT_FOUND');
     }
 
-    // 3️⃣ verifica plano do chief (OBRIGATÓRIO)
-    const chief = await tx.user.findUnique({
-      where: { id: elder.chiefId }
+    // // 3️⃣ verifica plano do chief (OBRIGATÓRIO)
+    // const chief = await tx.user.findUnique({
+    //   where: { id: elder.chiefId }
+    // });
+    const collaboratorExists = await tx.collaborator.findFirst({
+      where: { chiefId: elder.chiefId }
     });
 
-    if (!chief?.planPaid) {
-      throw new Error('PLAN_REQUIRED');
+    if (collaboratorExists) {
+      const chief = await tx.user.findUnique({
+        where: { id: elder.chiefId }
+      });
+
+      if (!chief?.planPaid) {
+        throw new Error('PLAN_REQUIRED');
+      }
     }
+
+
 
     // 4️⃣ cria usuário do colaborador
     const hash = await bcrypt.hash(data.password, 10);

@@ -110,3 +110,17 @@ model OTPResendLog {
   @@index([email])
   @@index([ip])
 }
+
+model Payment {
+  id String @id @map("_id") @default(auto()) @db.ObjectId
+  userId String @db.ObjectId
+  type String // "ELDER_EXTRA" | "COLLABORATOR"
+  amount Int
+  stripeSessionId String
+  createdAt DateTime @default(now())
+  status String @default("PENDING")
+// "PENDING" | "PAID" | "FAILED"
+  @@index([userId])
+  @@index([stripeSessionId])
+
+}

@@ -6,8 +6,16 @@ export async function requirePaidPlan(
 ) {
   await request.jwtVerify();
 
-  if (request.user.role !== 'FAMILIAR' && request.user.role !== 'ADMIN') {
+  if (
+    request.user.role !== 'FAMILIAR' &&
+    request.user.role !== 'ADMIN'
+  ) {
     return reply.status(403).send({ error: 'Access denied' });
+  }
+
+  // admin ignora pagamento
+  if (request.user.role === 'ADMIN') {
+    return;
   }
 
   const user = await request.server.prisma.user.findUnique({
@@ -16,7 +24,7 @@ export async function requirePaidPlan(
 
   if (!user?.planPaid) {
     return reply.status(402).send({
-      error: 'Plano não pago'
+      error: 'PLAN_REQUIRED'
     });
   }
 }

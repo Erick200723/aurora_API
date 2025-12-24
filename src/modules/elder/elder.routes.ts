@@ -27,7 +27,6 @@ export default async function elderRoutes(
       }
     },
     async (request) => {
-      // 🔥 AGORA request.body É TIPADO
       return CreateElder({
         ...request.body,
         chiefId: (request.user as { id: string }).id
