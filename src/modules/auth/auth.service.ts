@@ -198,3 +198,21 @@ async function checkResendLimit(
     throw new Error('RESEND_LIMIT_EXCEEDED');
   }
 }
+
+export async function getAllUsers(){
+  try{
+    const users=await prisma.user.findMany();
+    return users;
+  }catch(error){
+    throw new Error('Error fetching users');
+  }
+}
+
+export async function getAllElders(){
+  try{
+    const elders = await prisma.elder.findMany();
+    return elders;
+  }catch(error){
+    throw new Error('Error fetching elders');
+  }
+}

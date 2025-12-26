@@ -13,7 +13,9 @@ import {
   loginUser,
   loginElder,
   verifyCode,
-  resendOTP
+  resendOTP,
+  getAllUsers,
+  getAllElders
 } from './auth.service.js';
 
 
@@ -64,6 +66,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
     return resendOTP(email, ip);
   }
 );
+  app.get('/all-users',async()=>{
+    return getAllUsers();
+  })
+
+  app.get('/all-elders',async()=>{
+    return getAllElders();
+  })
 
 }
 
