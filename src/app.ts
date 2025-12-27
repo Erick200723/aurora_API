@@ -3,6 +3,8 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import multipart from '@fastify/multipart';
+import paymentRouter from './modules/payment/payment.checkout.js';
+
 
 import {
   ZodTypeProvider,
@@ -25,6 +27,7 @@ const server = fastify({
 // 🔴 ESSENCIAL
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
+server.register(paymentRouter,{prefix:'/payment'});
 
 await server.register(swagger, {
   openapi: {
