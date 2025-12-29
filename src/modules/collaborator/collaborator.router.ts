@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { requirePaidPlan } from '../../hooks/requirePaidPlan.js';
 
 import {
   registerCollaboratorSchema,
@@ -20,12 +21,19 @@ export default async function collaboratorRoutes(
   app.post(
     '/register',
     {
+      preHandler: requirePaidPlan,
       schema: {
-        body: registerCollaboratorSchema
+        security: [{ bearerAuth: [] }],
+        body: registerCollaboratorSchema,
+        tags: ['Collaborator']
       }
     },
     async (req) => {
-      return registerCollaborator(req.body as RegisterCollaboratorBody);
+      return registerCollaborator(
+        req.body as RegisterCollaboratorBody,
+        req.user.id
+      );
     }
   );
+
 }

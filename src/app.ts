@@ -3,8 +3,6 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import multipart from '@fastify/multipart';
-import paymentRouter from './modules/payment/payment.checkout.js';
-
 
 import {
   ZodTypeProvider,
@@ -19,16 +17,38 @@ import jwtPlugin from './plugins/jwt.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import elderRoutes from './modules/elder/elder.routes.js';
 import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
+import paymentRoutes from './modules/payment/payment.checkout.js';
+import { stripeWebhook } from './modules/payment/payment.webhook.js';
 
 const server = fastify({
-  logger: true
+  logger: true,
+  bodyLimit: 1048576
 }).withTypeProvider<ZodTypeProvider>();
 
-// 🔴 ESSENCIAL
+// 🔴 ESSENCIAL para Zod + Swagger
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
-server.register(paymentRouter,{prefix:'/payment'});
 
+// 🔹 RAW BODY → SÓ para Stripe webhook
+server.addContentTypeParser(
+  'application/json',
+  { parseAs: 'buffer' },
+  (req, body, done) => {
+    if (req.url === '/stripe/webhook') {
+      done(null, body);
+    } else {
+      done(null, JSON.parse(body.toString()));
+    }
+  }
+);
+
+// Plugins
+await server.register(cors);
+await server.register(multipart);
+await server.register(prismaPlugin);
+await server.register(jwtPlugin);
+
+// Swagger
 await server.register(swagger, {
   openapi: {
     info: {
@@ -44,11 +64,7 @@ await server.register(swagger, {
         }
       }
     },
-    security: [
-      {
-        bearerAuth: []
-      }
-    ]
+    security: [{ bearerAuth: [] }]
   },
   transform: jsonSchemaTransform
 });
@@ -57,15 +73,14 @@ await server.register(swaggerUI, {
   routePrefix: '/docs'
 });
 
-await server.register(cors);
-await server.register(multipart);
-
-await server.register(prismaPlugin);
-await server.register(jwtPlugin);
-await server.register(collaboratorRoutes, { prefix: '/collaborators' });
-
-
+// Rotas
 await server.register(authRoutes, { prefix: '/auth' });
+await server.register(collaboratorRoutes, { prefix: '/collaborators' });
 await server.register(elderRoutes, { prefix: '/elders' });
+await server.register(paymentRoutes, { prefix: '/payment' });
+await server.register(stripeWebhook, { prefix: '/stripe' });
 
+// Server
 await server.listen({ port: 4000, host: '0.0.0.0' });
+console.log('Server running at http://localhost:4000');
+console.log('Swagger docs at http://localhost:4000/docs');

@@ -57,6 +57,9 @@ export async function createCheckoutSession(
             status: 'PENDING'
         }
     });
+    if(!session.url){
+        throw new Error("Stripe checkout session URL not found");
+    }
    return{
     checkoutUrl: session.url
    }

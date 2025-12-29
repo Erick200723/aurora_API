@@ -22,19 +22,19 @@ import {
 export default async function authRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post('/register', { schema: { body: registerSchema } }, async (req) => {
+  app.post('/register', { schema: { body: registerSchema, tags: ['Auth'] } }, async (req) => {
     return registerFamiliar(req.body);
   });
 
-  app.post('/login', { schema: { body: loginSchema } }, async (req) => {
+  app.post('/login', { schema: { body: loginSchema, tags: ['Auth'] } }, async (req) => {
     return loginUser(req.body.email, req.body.password);
   });
 
-  app.post('/login-elder', { schema: { body: loginElderSchema } }, async (req) => {
+  app.post('/login-elder', { schema: { body: loginElderSchema, tags: ['Elder'] } }, async (req) => {
     return loginElder(req.body.email);
   });
 
-  app.post('/verify', { schema: { body: verifyCodeSchema } }, async (req) => {
+  app.post('/verify', { schema: { body: verifyCodeSchema, tags: ['Auth'] } }, async (req) => {
     const user = await verifyCode(req.body.email, req.body.code);
 
     if (!user) {
@@ -48,7 +48,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       })
     };
   });
-  app.post('/admin/fake-pay/:userId', async (request) => {
+  app.post('/admin/fake-pay/:userId', { schema: { tags: ['Admin'] } }, async (request) => {
     const { userId } = request.params as { userId: string };
 
     return request.server.prisma.user.update({
@@ -58,7 +58,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
  app.post(
   '/resend-otp',
-  { schema: { body: resendOTPSchema } },
+  { schema: { body: resendOTPSchema, tags: ['Auth'] } },
   async (request) => {
     const { email } = request.body;
     const ip = request.ip;

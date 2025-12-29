@@ -6,7 +6,7 @@ import { sendOTPEmail } from '../../utils/mail.js';
 
 const prisma = new PrismaClient();
 
-export async function registerCollaborator(data:RegisterCollaboratorInput ) {
+export async function registerCollaborator(data:RegisterCollaboratorInput, userId:string ) {
   return prisma.$transaction(async (tx) => {
     // 1️⃣ verifica email
     const exists = await tx.user.findUnique({
