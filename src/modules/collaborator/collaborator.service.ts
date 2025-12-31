@@ -6,47 +6,38 @@ import { sendOTPEmail } from '../../utils/mail.js';
 
 const prisma = new PrismaClient();
 
-export async function registerCollaborator(data:RegisterCollaboratorInput, userId:string ) {
+export async function registerCollaborator(
+  data: RegisterCollaboratorInput,
+  userId: string
+) {
   return prisma.$transaction(async (tx) => {
-    // 1️⃣ verifica email
+    // 1 verifica email
     const exists = await tx.user.findUnique({
       where: { email: data.email }
     });
 
     if (exists) {
-      throw new Error('EMAIL_ALREADY_REGISTERED');
+      throw{
+        code: "EMAIL_ALREADY_REGISTERED",
+        message: "Email ja registrado",
+        status_code: 400 
+      };
     }
 
-    // 2️⃣ busca elder
+    // 2 busca elder
     const elder = await tx.elder.findUnique({
       where: { cpf: data.elderCpf }
     });
 
     if (!elder) {
-      throw new Error('ELDER_NOT_FOUND');
+      throw{
+        code: "ELDER_NOT_FOUND",
+        message: "Elder not found",
+        status_code: 404
+      };
     }
 
-    // // 3️⃣ verifica plano do chief (OBRIGATÓRIO)
-    // const chief = await tx.user.findUnique({
-    //   where: { id: elder.chiefId }
-    // });
-    const collaboratorExists = await tx.collaborator.findFirst({
-      where: { chiefId: elder.chiefId }
-    });
-
-    if (collaboratorExists) {
-      const chief = await tx.user.findUnique({
-        where: { id: elder.chiefId }
-      });
-
-      if (!chief?.planPaid) {
-        throw new Error('PLAN_REQUIRED');
-      }
-    }
-
-
-
-    // 4️⃣ cria usuário do colaborador
+    // 3 cria usuário do colaborador
     const hash = await bcrypt.hash(data.password, 10);
 
     const collaboratorUser = await tx.user.create({
@@ -59,7 +50,7 @@ export async function registerCollaborator(data:RegisterCollaboratorInput, userI
       }
     });
 
-    // 5️⃣ cria vínculo
+    // 4 cria vínculo
     await tx.collaborator.create({
       data: {
         userId: collaboratorUser.id,
@@ -68,7 +59,7 @@ export async function registerCollaborator(data:RegisterCollaboratorInput, userI
       }
     });
 
-    // 6️⃣ gera OTP
+    // 5 gera OTP
     const code = generateOTP();
 
     await tx.verificationCode.create({
@@ -79,7 +70,7 @@ export async function registerCollaborator(data:RegisterCollaboratorInput, userI
       }
     });
 
-    // 7️⃣ envia OTP
+    // 6 envia OTP
     await sendOTPEmail(data.email, code);
 
     return { message: 'Verification code sent to email' };

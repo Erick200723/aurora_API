@@ -22,12 +22,16 @@ export async function createCheckoutSession(
     const amount = PRICE[type];
 
     if(!amount){
-        throw new Error("INVALID_PAYMENT_TYPE");
+        throw{
+            code: "INVALID_PAYMENT_TYPE",
+            message: "Invalid payment type",
+            status_code: 400
+        };
     }
 
     const session = await stripe.checkout.sessions.create({
         mode: 'payment',
-        payment_method_types: ['card', 'pix'],
+        payment_method_types: ['card'],
         line_items:[{
             price_data: {
                 currency: 'brl',
@@ -44,7 +48,7 @@ export async function createCheckoutSession(
         success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
         metadata:{
-            userId: type
+            userId, type
         }
     });
 
@@ -58,7 +62,11 @@ export async function createCheckoutSession(
         }
     });
     if(!session.url){
-        throw new Error("Stripe checkout session URL not found");
+        throw{
+            code: "SESSION_URL_NOT_FOUND",
+            message: "Checkout session URL not found",
+            status_code: 500
+        };
     }
    return{
     checkoutUrl: session.url

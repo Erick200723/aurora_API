@@ -7,7 +7,10 @@
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "db": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "stripe:listen": "stripe listen --forward-to localhost:4000/stripe/webhook",
+    "stripe:trigger": "stripe trigger checkout.session.completed",
+    "start:stripe": "stripe login"
   },
   "keywords": [],
   "author": "",

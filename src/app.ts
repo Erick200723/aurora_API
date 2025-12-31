@@ -25,16 +25,15 @@ const server = fastify({
   bodyLimit: 1048576
 }).withTypeProvider<ZodTypeProvider>();
 
-// 🔴 ESSENCIAL para Zod + Swagger
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
 
-// 🔹 RAW BODY → SÓ para Stripe webhook
+
 server.addContentTypeParser(
   'application/json',
   { parseAs: 'buffer' },
   (req, body, done) => {
-    if (req.url === '/stripe/webhook') {
+    if (req.url.startsWith('/stripe/webhook')) {
       done(null, body);
     } else {
       done(null, JSON.parse(body.toString()));
@@ -42,13 +41,13 @@ server.addContentTypeParser(
   }
 );
 
-// Plugins
+
+
 await server.register(cors);
 await server.register(multipart);
 await server.register(prismaPlugin);
 await server.register(jwtPlugin);
 
-// Swagger
 await server.register(swagger, {
   openapi: {
     info: {
@@ -69,18 +68,19 @@ await server.register(swagger, {
   transform: jsonSchemaTransform
 });
 
+
+
 await server.register(swaggerUI, {
   routePrefix: '/docs'
 });
 
-// Rotas
 await server.register(authRoutes, { prefix: '/auth' });
 await server.register(collaboratorRoutes, { prefix: '/collaborators' });
 await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
 
-// Server
+
 await server.listen({ port: 4000, host: '0.0.0.0' });
 console.log('Server running at http://localhost:4000');
 console.log('Swagger docs at http://localhost:4000/docs');

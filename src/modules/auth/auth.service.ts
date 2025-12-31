@@ -21,7 +21,12 @@ export async function registerFamiliar(data: {
       where: { email: data.email }
     });
 
-    if (exists) throw new Error('Email already registered');
+    if (exists) throw{
+      code: "EMAIL_ALREADY_REGISTERED",
+      message: "Email ja registrado",
+      status_code: 400
+
+    };
 
     const hash = await bcrypt.hash(data.password, 10);
 
@@ -61,10 +66,18 @@ export async function loginUser(email: string, password: string) {
       where: { email }
     });
 
-    if (!user) throw new Error('Invalid credentials');
+    if (!user)  throw{
+      code: "INVALID_CREDENTIALS",
+      message: "Invalid credentials",
+      status_code: 400
+    };
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new Error('Invalid credentials');
+    if (!valid) throw{
+      code: "INVALID_CREDENTIALS",
+      message: "Invalid credentials",
+      status_code: 400
+    };
 
     const code = generateOTP();
 
@@ -91,7 +104,11 @@ export async function loginElder(email: string) {
   });
 
   if (!user || user.role !== 'IDOSO') {
-    throw new Error('Elder not found');
+    throw{
+      code: "INVALID_CREDENTIALS",
+      message: "Invalid credentials",
+      status_code: 400
+    };
   }
 
   const code = generateOTP();
@@ -122,11 +139,19 @@ export async function verifyCode(email: string, code: string) {
   });
 
   if (!record) {
-    throw new Error('INVALID_CODE');
+    throw{
+      code: "INVALID_CODE",
+      message: "Invalid verification code",
+      status_code: 400
+    };
   }
 
   if (record.expiresAt < new Date()) {
-    throw new Error('CODE_EXPIRED');
+    throw{
+      code: "CODE_EXPIRED",
+      message: "Verification code has expired",
+      status_code: 400
+    };
   }
 
   await prisma.verificationCode.update({
@@ -195,7 +220,11 @@ async function checkResendLimit(
   });
 
   if (attempts >= RESEND_LIMIT) {
-    throw new Error('RESEND_LIMIT_EXCEEDED');
+    throw{
+      code: "RESEND_LIMIT_EXCEEDED",
+      message: "Resend limit exceeded. Please try again later.",
+      status_code: 404
+    };
   }
 }
 
@@ -204,7 +233,11 @@ export async function getAllUsers(){
     const users=await prisma.user.findMany();
     return users;
   }catch(error){
-    throw new Error('Error fetching users');
+    throw{
+      code: "FETCH_USERS_FAILED",
+      message: "Failed to fetch users",
+      status_code: 500
+    };
   }
 }
 
@@ -213,6 +246,47 @@ export async function getAllElders(){
     const elders = await prisma.elder.findMany();
     return elders;
   }catch(error){
-    throw new Error('Error fetching elders');
+    throw {
+      code: "FETCH_ELDERS_FAILED",
+      message: "Failed to fetch elders",
+      status_code: 500
+    };
   }
 }
+
+export async function putNameUser(id:string, name:string){
+  try{
+    //verificar se o usuario existe e se estar logado
+    const user = await prisma.user.findUnique({
+      where: {id}
+    });
+    if(!user){
+      throw{
+        code: "USER_NOT_FOUND",
+        message: "User not found",
+        status_code: 404
+      };
+    }
+    const log = await loginUser(user.email, user.password);
+    if(!log){
+      throw{
+        code: "LOGIN_FAILED",
+        message: "User login failed",
+        status_code: 500
+      };
+    }else{
+      console.log('User logged in successfully');
+    }
+    const updatedUser = await prisma.user.update({
+      where: {id},
+      data: {name}
+    });
+    return updatedUser;
+  }catch(error){
+    throw {
+      code: "UPDATE_FAILED",
+      message: "Failed to update user name",
+      status_code: 500
+    }
+    }
+  }

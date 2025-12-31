@@ -116,7 +116,7 @@ model Payment {
   userId String @db.ObjectId
   type String
   amount Int
-  stripeSessionId String
+  stripeSessionId  String   @unique
   status String @default("PENDING")
   createdAt DateTime @default(now())
 }

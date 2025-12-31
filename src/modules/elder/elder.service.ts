@@ -35,7 +35,11 @@ export async function CreateElder(data: CreateElderInput) {
 
   if (data.createLogin) {
     if (!data.email || !data.password) {
-      throw new Error('Email and password are required');
+      throw{
+        code: "MISSING_CREDENTIALS",
+        message: "Email and password are required to create login",
+        status_code: 400
+      };
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -70,4 +74,27 @@ export async function CreateElder(data: CreateElderInput) {
   });
 
   return elder;
+}
+
+export async function verificarElderPlan(chiefId: string) {
+  const elderCount = await prisma.elder.count({
+    where: { chiefId }
+  })
+  if (elderCount >= 1) {
+    const chief = await prisma.user.findUnique({
+      where: { id: chiefId }
+    });
+  }
+  const chief = await prisma.user.findUnique({
+    where: { id: chiefId }
+  });
+  if (!chief?.planPaid) {
+    throw{
+      code: "PLAN_REQUIRED",
+      message: "Plan required to add more elders",
+      status_code: 402
+    };
+  }
+  //proteger a rota ate que o chief tenha um plano pago
+  return true;
 }

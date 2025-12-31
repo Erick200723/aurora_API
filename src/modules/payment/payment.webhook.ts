@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function stripeWebhook(app: FastifyInstance) {
-  app.post('/webhook/stripe', async (request, reply) => {
+  app.post('/webhook', async (request, reply) => {
     const signature = request.headers['stripe-signature'];
 
     if (!signature) {
@@ -26,38 +26,37 @@ export async function stripeWebhook(app: FastifyInstance) {
       );
     } catch (err: any) {
       return reply.status(400).send({
-        error: `Webhook Error: ${err.message}`,
+        error: `Webhook Error: ${err.message} erro ao ao validar assinatura`,
       });
     }
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
 
-      const userId = session.metadata?.userId;
-      const type = session.metadata?.type;
+        const userId = session.metadata?.userId;
 
-      if (!userId || !type) {
-        return reply.status(400).send({ error: 'Missing metadata' });
+        if (userId) {
+          await prisma.payment.update({
+            where: { stripeSessionId: session.id },
+            data: { status: 'COMPLETED' },
+          });
+
+          await prisma.user.update({
+            where: { id: userId },
+            data: { planPaid: true },
+          });
+        }
+        break;
       }
 
-      await prisma.payment.create({
-        data: {
-          userId,
-          type,
-          amount: session.amount_total!,
-          stripeSessionId: session.id,
-        },
-      });
-
-      // libera plano
-      if (type === 'COLLABORATOR') {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { planPaid: true },
-        });
-      }
+      default:
+        console.log(`Evento ignorado: ${event.type}`);
     }
 
-    return reply.send({ received: true });
+
+
+    return reply.status(200).send({ received: true },);
   });
+
 }
