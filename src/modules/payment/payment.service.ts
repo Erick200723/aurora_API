@@ -11,8 +11,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 type PaymentType = "ELDER_EXTRA" | "COLLABORATOR";
 
 const PRICE = {
-    ELDER_EXTRA: 1000, //equivale a 10.00 BR
-    COLLABORATOR: 1000, //equivale a 10.00 BR
+    ELDER_EXTRA: 3000, //equivale a 10.00 BR
+    COLLABORATOR: 3000, //equivale a 10.00 BR
 }
 
 export async function createCheckoutSession(

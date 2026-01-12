@@ -52,6 +52,8 @@ export async function registerFamiliar(data: {
 
     await sendOTPEmail(data.email, code);
 
+    // retornar ao front os dados do usuario sem o password
+
     return { message: 'Verification code sent to email' };
   });
 }
@@ -89,9 +91,20 @@ export async function loginUser(email: string, password: string) {
       }
     });
 
+    const data_user = await tx.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true
+      }
+    });
+
     await sendOTPEmail(email, code);
 
-    return { message: 'Verification code sent' };
+    return { message: 'Verification code sent', user: data_user  };
   });
 }
 

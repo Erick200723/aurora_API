@@ -20,10 +20,12 @@ import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
 import paymentRoutes from './modules/payment/payment.checkout.js';
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
 
+
 const server = fastify({
   logger: true,
   bodyLimit: 1048576
 }).withTypeProvider<ZodTypeProvider>();
+
 
 server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
@@ -42,8 +44,14 @@ server.addContentTypeParser(
 );
 
 
-
-await server.register(cors);
+await server.register(cors, {
+  origin: [
+    'http://26.79.85.211:3000',
+    'http://localhost:3000',
+    'https://aurora-dashboard-one.vercel.app/'
+  ],
+  credentials: true
+});
 await server.register(multipart);
 await server.register(prismaPlugin);
 await server.register(jwtPlugin);
