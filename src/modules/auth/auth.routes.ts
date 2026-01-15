@@ -79,7 +79,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
 
         return reply.send({
-          user
+          user,
+          token: process.env.NODE_ENV !== "production" ? token : undefined,
         });
       } catch (err: any) {
         if (err.message === "INVALID_CODE") {

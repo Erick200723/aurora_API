@@ -143,7 +143,7 @@ export async function verifyCode(email: string, code: string,) {
 
   return prisma.user.update({
     where: { email },
-    data: { status: "ACTIVE" }
+    data: { status: "ACTIVE" },
   });
 }
 
