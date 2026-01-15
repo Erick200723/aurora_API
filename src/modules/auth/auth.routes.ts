@@ -1,12 +1,12 @@
-import { FastifyInstance } from 'fastify';
-import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { FastifyInstance } from "fastify";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 import {
   registerSchema,
   loginSchema,
   verifyCodeSchema,
   loginElderSchema,
   resendOTPSchema
-} from './auth.schemas.js';
+} from "./auth.schemas.js";
 
 import {
   registerFamiliar,
@@ -16,63 +16,98 @@ import {
   resendOTP,
   getAllUsers,
   getAllElders
-} from './auth.service.js';
-
+} from "./auth.service.js";
 
 export default async function authRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post('/register', { schema: { body: registerSchema, tags: ['Auth'] } }, async (req) => {
-    return registerFamiliar(req.body);
-  });
-
-  app.post('/login', { schema: { body: loginSchema, tags: ['Auth'] } }, async (req) => {
-    return loginUser(req.body.email, req.body.password);
-  });
-
-  app.post('/login-elder', { schema: { body: loginElderSchema, tags: ['Elder'] } }, async (req) => {
-    return loginElder(req.body.email);
-  });
-
-  app.post('/verify', { schema: { body: verifyCodeSchema, tags: ['Auth'] } }, async (req) => {
-    const user = await verifyCode(req.body.email, req.body.code);
-
-    if (!user) {
-      throw new Error('Invalid or expired code');
+  /* ================= REGISTER ================= */
+  app.post("/register", { schema: { body: registerSchema } }, async (req, reply) => {
+    try {
+      return await registerFamiliar(req.body);
+    } catch (err: any) {
+      if (err.message === "EMAIL_ALREADY_REGISTERED") {
+        return reply.status(400).send({ message: "Email já registrado" });
+      }
+      throw err;
     }
-
-    return {
-      token: fastify.jwt.sign({
-        id: user.id,
-        role: user.role
-      })
-    };
   });
-  app.post('/admin/fake-pay/:userId', { schema: { tags: ['Admin'] } }, async (request) => {
-    const { userId } = request.params as { userId: string };
 
-    return request.server.prisma.user.update({
-      where: { id: userId },
-      data: { planPaid: true }
-    });
+  /* ================= LOGIN ================= */
+  app.post("/login", { schema: { body: loginSchema } }, async (req, reply) => {
+    try {
+      return await loginUser(req.body.email, req.body.password);
+    } catch (err: any) {
+      if (err.message === "INVALID_CREDENTIALS") {
+        return reply.status(400).send({ message: "Credenciais inválidas" });
+      }
+      throw err;
+    }
   });
- app.post(
-  '/resend-otp',
-  { schema: { body: resendOTPSchema, tags: ['Auth'] } },
-  async (request) => {
-    const { email } = request.body;
-    const ip = request.ip;
 
-    return resendOTP(email, ip);
-  }
-);
-  app.get('/all-users',async()=>{
-    return getAllUsers();
-  })
+  /* ================= LOGIN ELDER ================= */
+  app.post("/login-elder", { schema: { body: loginElderSchema } }, async (req, reply) => {
+    try {
+      return await loginElder(req.body.email);
+    } catch (err: any) {
+      if (err.message === "INVALID_CREDENTIALS") {
+        return reply.status(400).send({ message: "Credenciais inválidas" });
+      }
+      throw err;
+    }
+  });
 
-  app.get('/all-elders',async()=>{
-    return getAllElders();
-  })
+  /* ================= VERIFY OTP ================= */
+  app.post(
+    "/verify",
+    { schema: { body: verifyCodeSchema } },
+    async (req, reply) => {
+      try {
+        const user = await verifyCode(req.body.email, req.body.code);
 
+        const token = fastify.jwt.sign({
+          id: user.id,
+          role: user.role
+        });
+
+        reply.setCookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+          path: "/"
+        });
+
+
+        return reply.send({
+          user
+        });
+      } catch (err: any) {
+        if (err.message === "INVALID_CODE") {
+          return reply.status(400).send({ message: "Código inválido" });
+        }
+
+        if (err.message === "CODE_EXPIRED") {
+          return reply.status(400).send({ message: "Código expirado" });
+        }
+
+        throw err;
+      }
+    }
+  );
+
+
+  /* ================= RESEND OTP ================= */
+  app.post("/resend-otp", { schema: { body: resendOTPSchema } }, async (req, reply) => {
+    try {
+      return await resendOTP(req.body.email, req.ip);
+    } catch (err: any) {
+      if (err.message === "RESEND_LIMIT_EXCEEDED") {
+        return reply.status(429).send({ message: "Limite de reenvio excedido" });
+      }
+      throw err;
+    }
+  });
+
+  app.get("/all-users", async () => getAllUsers());
+  app.get("/all-elders", async () => getAllElders());
 }
-

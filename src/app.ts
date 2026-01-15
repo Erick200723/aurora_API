@@ -19,6 +19,8 @@ import elderRoutes from './modules/elder/elder.routes.js';
 import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
 import paymentRoutes from './modules/payment/payment.checkout.js';
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
+import cookie from "@fastify/cookie";
+
 
 
 const server = fastify({
@@ -48,10 +50,15 @@ await server.register(cors, {
   origin: [
     'http://26.79.85.211:3000',
     'http://localhost:3000',
-    'https://aurora-dashboard-one.vercel.app/'
+    'https://aurora-dashboard-one.vercel.app'
   ],
   credentials: true
 });
+
+await server.register(cookie, {
+  secret: process.env.COOKIE_SECRET || "aurora-secret",
+});
+
 await server.register(multipart);
 await server.register(prismaPlugin);
 await server.register(jwtPlugin);

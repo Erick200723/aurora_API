@@ -16,17 +16,9 @@ export async function registerFamiliar(data: {
   email: string;
   password: string;
 }) {
-  return await prisma.$transaction(async (tx) => {
-    const exists = await tx.user.findUnique({
-      where: { email: data.email }
-    });
-
-    if (exists) throw{
-      code: "EMAIL_ALREADY_REGISTERED",
-      message: "Email ja registrado",
-      status_code: 400
-
-    };
+  return prisma.$transaction(async (tx) => {
+    const exists = await tx.user.findUnique({ where: { email: data.email } });
+    if (exists) throw new Error("EMAIL_ALREADY_REGISTERED");
 
     const hash = await bcrypt.hash(data.password, 10);
 
@@ -35,26 +27,20 @@ export async function registerFamiliar(data: {
         name: data.name,
         email: data.email,
         password: hash,
-        role: 'FAMILIAR',
-        status: 'PENDING'
+        role: "FAMILIAR",
+        status: "PENDING"
       }
     });
 
     const code = generateOTP();
 
     await tx.verificationCode.create({
-      data: {
-        email: data.email,
-        code,
-        expiresAt: otpExpires()
-      }
+      data: { email: data.email, code, expiresAt: otpExpires() }
     });
 
     await sendOTPEmail(data.email, code);
 
-    // retornar ao front os dados do usuario sem o password
-
-    return { message: 'Verification code sent to email' };
+    return { message: "Verification code sent" };
   });
 }
 
@@ -63,48 +49,31 @@ export async function registerFamiliar(data: {
  * LOGIN COM SENHA (ENVIA OTP)
  */
 export async function loginUser(email: string, password: string) {
-  return await prisma.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({
-      where: { email }
-    });
-
-    if (!user)  throw{
-      code: "INVALID_CREDENTIALS",
-      message: "Invalid credentials",
-      status_code: 400
-    };
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({ where: { email } });
+    if (!user) throw new Error("INVALID_CREDENTIALS");
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw{
-      code: "INVALID_CREDENTIALS",
-      message: "Invalid credentials",
-      status_code: 400
-    };
+    if (!valid) throw new Error("INVALID_CREDENTIALS");
 
     const code = generateOTP();
 
     await tx.verificationCode.create({
-      data: {
-        email,
-        code,
-        expiresAt: otpExpires()
-      }
-    });
-
-    const data_user = await tx.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        status: true
-      }
+      data: { email, code, expiresAt: otpExpires() }
     });
 
     await sendOTPEmail(email, code);
 
-    return { message: 'Verification code sent', user: data_user  };
+    return {
+      message: "Verification code sent",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status
+      }
+    };
   });
 }
 
@@ -116,55 +85,55 @@ export async function loginElder(email: string) {
     where: { email }
   });
 
-  if (!user || user.role !== 'IDOSO') {
-    throw{
+  if (!user || user.role !== "IDOSO") {
+    throw {
       code: "INVALID_CREDENTIALS",
       message: "Invalid credentials",
       status_code: 400
     };
   }
 
+  // 🔥 Remove qualquer OTP antigo ainda não usado
+  await prisma.verificationCode.deleteMany({
+    where: {
+      email,
+      used: false
+    }
+  });
+
   const code = generateOTP();
+  const expiresAt = otpExpires();
 
   await prisma.verificationCode.create({
     data: {
       email,
       code,
-      expiresAt: otpExpires()
+      expiresAt,
+      used: false
     }
   });
 
   await sendOTPEmail(email, code);
 
-  return { message: 'Verification code sent' };
+  return {
+    message: "Verification code sent"
+  };
 }
+
 
 /**
  * VERIFICAÇÃO DO OTP
  */
-export async function verifyCode(email: string, code: string) {
+export async function verifyCode(email: string, code: string,) {
   const record = await prisma.verificationCode.findFirst({
-    where: {
-      email,
-      code,
-      used: false
-    }
+    where: { email, code, used: false },
+    orderBy: { createdAt: "desc" }
   });
 
-  if (!record) {
-    throw{
-      code: "INVALID_CODE",
-      message: "Invalid verification code",
-      status_code: 400
-    };
-  }
+  if (!record) throw new Error("INVALID_CODE");
 
-  if (record.expiresAt < new Date()) {
-    throw{
-      code: "CODE_EXPIRED",
-      message: "Verification code has expired",
-      status_code: 400
-    };
+  if (record.expiresAt.getTime() <= Date.now()) {
+    throw new Error("CODE_EXPIRED");
   }
 
   await prisma.verificationCode.update({
@@ -172,43 +141,34 @@ export async function verifyCode(email: string, code: string) {
     data: { used: true }
   });
 
-  const user = await prisma.user.update({
+  return prisma.user.update({
     where: { email },
-    data: { status: 'ACTIVE' }
+    data: { status: "ACTIVE" }
   });
-
-  return user;
 }
+
+
 
 export async function resendOTP(email: string, ip: string) {
   return prisma.$transaction(async (tx) => {
     await checkResendLimit(tx, email, ip);
 
-    // registra tentativa
-    await tx.oTPResendLog.create({
-      data: { email, ip }
-    });
+    await tx.oTPResendLog.create({ data: { email, ip } });
 
-    // invalida OTPs antigos
     await tx.verificationCode.updateMany({
       where: { email, used: false },
       data: { used: true }
     });
 
-    // gera novo OTP
     const code = generateOTP();
 
     await tx.verificationCode.create({
-      data: {
-        email,
-        code,
-        expiresAt: otpExpires()
-      }
+      data: { email, code, expiresAt: otpExpires() }
     });
 
     await sendOTPEmail(email, code);
 
-    return { message: 'Verification code resent' };
+    return { message: "Verification code resent" };
   });
 }
 
@@ -218,26 +178,14 @@ async function checkResendLimit(
   email: string,
   ip: string
 ) {
-  const windowStart = new Date(
-    Date.now() - RESEND_WINDOW_MINUTES * 60 * 1000
-  );
+  const windowStart = new Date(Date.now() - 10 * 60 * 1000);
 
   const attempts = await tx.oTPResendLog.count({
-    where: {
-      email,
-      ip,
-      sentAt: {
-        gte: windowStart
-      }
-    }
+    where: { email, ip, sentAt: { gte: windowStart } }
   });
 
-  if (attempts >= RESEND_LIMIT) {
-    throw{
-      code: "RESEND_LIMIT_EXCEEDED",
-      message: "Resend limit exceeded. Please try again later.",
-      status_code: 404
-    };
+  if (attempts >= 3) {
+    throw new Error("RESEND_LIMIT_EXCEEDED");
   }
 }
 

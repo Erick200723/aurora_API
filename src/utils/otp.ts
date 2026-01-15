@@ -3,7 +3,5 @@ export function generateOTP(): string {
 }
 
 export function otpExpires(): Date {
-  const expires = new Date();
-  expires.setMinutes(expires.getMinutes() + 10);
-  return expires;
+  return new Date(Date.now() + 10 * 60 * 1000);
 }
