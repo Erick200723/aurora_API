@@ -95,7 +95,9 @@ await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
 
+const PORT = Number(process.env.PORT) || 4000
 
-await server.listen({ port: 4000, host: '0.0.0.0' });
-console.log('Server running at http://localhost:4000');
-console.log('Swagger docs at http://localhost:4000/docs');
+server.listen({ port: PORT, host: "0.0.0.0" })
+console.log(`Server running on port ${PORT}`);
+console.log(`Swagger docs at /docs`);
+

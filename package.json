@@ -1,13 +1,14 @@
 {
   "name": "aroura_ia",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/app.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "db": "prisma generate",
     "db:push": "prisma db push",
+    "start": "node dist/app.js",
     "stripe:listen": "stripe listen --forward-to localhost:4000/stripe/webhook",
     "stripe:trigger": "stripe trigger checkout.session.completed",
     "start:stripe": "stripe login"

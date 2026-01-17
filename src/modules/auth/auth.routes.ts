@@ -68,19 +68,23 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const token = fastify.jwt.sign({
           id: user.id,
           role: user.role
-        });
+        },
+        { expiresIn: "7d" }
+      );
 
         reply.setCookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-          path: "/"
+          secure: true,
+          sameSite: "none",
+          path: "/",
+          domain: ".aurora.com",
         });
 
 
         return reply.send({
           user,
           token: process.env.NODE_ENV !== "production" ? token : undefined,
+          
         });
       } catch (err: any) {
         if (err.message === "INVALID_CODE") {
