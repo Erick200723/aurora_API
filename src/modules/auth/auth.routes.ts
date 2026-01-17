@@ -77,7 +77,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
           secure: true,
           sameSite: "none",
           path: "/",
-          domain: ".aurora.com",
         });
 
 
