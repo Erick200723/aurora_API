@@ -34,11 +34,12 @@ export async function registerFamiliar(data: {
 
     const code = generateOTP();
 
+    await sendOTPEmail(data.email, code);
+
     await tx.verificationCode.create({
       data: { email: data.email, code, expiresAt: otpExpires() }
     });
 
-    await sendOTPEmail(data.email, code);
 
     return { message: "Verification code sent" };
   });
@@ -55,6 +56,11 @@ export async function loginUser(email: string, password: string) {
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new Error("INVALID_CREDENTIALS");
+
+     await tx.verificationCode.updateMany({
+      where: { email, used: false },
+      data: { used: true }
+    })
 
     const code = generateOTP();
 
@@ -93,7 +99,6 @@ export async function loginElder(email: string) {
     };
   }
 
-  // 🔥 Remove qualquer OTP antigo ainda não usado
   await prisma.verificationCode.deleteMany({
     where: {
       email,

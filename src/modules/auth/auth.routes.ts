@@ -72,8 +72,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
         { expiresIn: "7d" }
       );
 
-        
-
         return reply.send({
           user,
           token: token ?? undefined
