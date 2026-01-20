@@ -1,5 +1,5 @@
-import fp from 'fastify-plugin';
 import { v2 as cloudinary } from 'cloudinary';
+import fp from 'fastify-plugin';
 export default fp(async (fastify) => {
     cloudinary.config({
         cloud_name: process.env.CLOUDINARY_NAME,

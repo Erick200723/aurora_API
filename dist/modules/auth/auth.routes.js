@@ -51,7 +51,6 @@ export default async function authRoutes(fastify) {
                 secure: true,
                 sameSite: "none",
                 path: "/",
-                domain: ".aurora.com",
             });
             return reply.send({
                 user,

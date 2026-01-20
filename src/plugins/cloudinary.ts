@@ -1,5 +1,5 @@
-import fp from 'fastify-plugin';
-import { v2 as cloudinary } from 'cloudinary';
+
+import { v2 as cloudinary } from 'cloudinary';import fp from 'fastify-plugin';
 
 export default fp(async (fastify) => {
   cloudinary.config({

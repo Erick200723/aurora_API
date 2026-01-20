@@ -82,7 +82,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
         return reply.send({
           user,
-          token: process.env.NODE_ENV !== "production" ? token : undefined,
+          token: token ?? undefined
           
         });
       } catch (err: any) {
