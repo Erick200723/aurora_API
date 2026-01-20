@@ -72,13 +72,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         { expiresIn: "7d" }
       );
 
-        reply.setCookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-          path: "/",
-        });
-
+        
 
         return reply.send({
           user,
