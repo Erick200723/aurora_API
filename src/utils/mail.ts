@@ -1,10 +1,11 @@
 import axios from "axios";
 
 export async function sendOTPEmail(email: string, code: string) {
+  // Pega a chave que você colou no Render (a da aba "Chaves API")
   const apiKey = process.env.MAIL_PASS; 
-  
+
   try {
-    const response = await axios.post(
+    await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
         sender: { name: "Aurora IA", email: "erick2007gabriel23@gmail.com" },
@@ -21,13 +22,6 @@ export async function sendOTPEmail(email: string, code: string) {
                     ${code}
                   </span>
                 </div>
-                <div style="display: inline-block; background-color: #fff4e5; color: #856404; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 500;">
-                  ⏱ Expira em 5 minutos
-                </div>
-              </div>
-              <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
-                <p style="font-size: 12px; color: #999; margin: 0;">Se você não solicitou este código, ignore com segurança.</p>
-                <p style="font-size: 12px; color: #999; margin-top: 10px; font-weight: bold;">© 2026 Aurora IA</p>
               </div>
             </div>
           </div>
@@ -35,16 +29,15 @@ export async function sendOTPEmail(email: string, code: string) {
       },
       {
         headers: {
-          'api-key': apiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'api-key': apiKey, // A Brevo exige este nome de header para API
+          'Content-Type': 'application/json'
         }
       }
     );
+    console.log("✅ E-mail enviado com sucesso via API!");
+  } catch (err) {
 
-    console.log("✅ E-mail enviado via API com sucesso!", response.data);
-  } catch (err: any) {
-    console.error("❌ Erro na API da Brevo:", err.response?.data || err.message);
+    console.error("❌ Erro na API da Brevo:", err);
     throw err;
   }
 }
