@@ -22,7 +22,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
   /* ================= REGISTER ================= */
-  app.post("/register", { schema: { body: registerSchema } }, async (req, reply) => {
+  app.post("/register", { schema: { body: registerSchema, tags: ["Auth"] } }, async (req, reply) => {
     try {
       return await registerFamiliar(req.body);
     } catch (err: any) {
