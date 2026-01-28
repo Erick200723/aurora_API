@@ -104,16 +104,45 @@ O projeto está sendo construído como parte do meu **desenvolvimento profission
 
 ## 👨‍💻 Sobre o Desenvolvedor
 
-Projeto desenvolvido por **Erick Gabriel**, desenvolvedor em formação, com foco em:
+Sou desenvolvedor **Full Stack**, com foco na construção de aplicações reais, organizadas e escaláveis.  
+O projeto **Aurora** está sendo desenvolvido como uma solução prática para aplicar conceitos modernos de back-end, autenticação, segurança e arquitetura de APIs.
 
-* JavaScript / TypeScript
-* Node.js 
-* APIs REST / Festify
-* Autenticação e segurança
-* Boas práticas de desenvolvimento
+Neste projeto, trabalhei diretamente com as seguintes tecnologias e ferramentas:
 
-Este projeto faz parte do meu portfólio e está sendo utilizado como base para aprendizado contínuo e aplicação prática dos conhecimentos adquiridos.
+### 🛠️ Tecnologias Principais
+- **Node.js** com **TypeScript**
+- **Fastify** (API performática e tipada)
+- **Prisma ORM** (modelagem e acesso a banco de dados)
+- **Zod** (validação e tipagem de dados)
+- **JWT** para autenticação segura
+- **OTP por e-mail** para verificação de acesso
+- **Bcrypt** para criptografia de senhas
 
----
+### 🗄️ Bancos de Dados 
+- **MongoDB** (via Prisma)
 
-⭐ *Mesmo em desenvolvimento, o Aurora já demonstra uma base sólida, foco em segurança e organização — características essenciais em aplicações reais.*
+### 🔐 Autenticação e Segurança
+- Login com **e-mail + senha**
+- Verificação em duas etapas (**OTP**)
+- Controle de acesso por **roles** (ADMIN, COLABORADOR, IDOSO)
+- Sessões seguras com cookies e JWT
+
+### 📦 Integrações e Serviços
+- **Nodemailer / Resend** para envio de e-mails
+- **Stripe** (estrutura preparada para pagamentos)
+- **Cloudinary** para upload de imagens
+- **Firebase Admin** para integrações futuras
+
+### 📚 Documentação
+- **Swagger** integrado à API para documentação e testes de endpoints
+
+### 🚀 Objetivo do Projeto
+Este projeto tem como objetivo demonstrar minha capacidade de:
+- Criar APIs REST bem estruturadas
+- Aplicar boas práticas de segurança
+- Trabalhar com autenticação real
+- Organizar código pensando em crescimento e manutenção
+
+O Aurora ainda está em desenvolvimento, com novas funcionalidades sendo adicionadas continuamente, servindo como base prática de aprendizado e evolução profissional.
+
+
