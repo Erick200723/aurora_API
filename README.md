@@ -1,148 +1,104 @@
-# 🌟 Aurora – Plataforma de Cuidado e Gestão para Idosos
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,100:203a43&height=180&section=header&text=Aurora%20API&fontSize=38&fontColor=ffffff&animation=fadeIn" />
+</p>
 
-> 🚧 **Projeto em desenvolvimento ativo** – novas funcionalidades estão sendo implementadas continuamente.
+<h2 align="center">🚀 Backend em construção para um sistema moderno de autenticação e gestão de usuários</h2>
 
-O **Aurora** é uma plataforma web focada no **cuidado, acompanhamento e gestão de idosos**, conectando familiares, colaboradores e o próprio idoso em um ambiente seguro, moderno e acessível.
-
-O objetivo principal do projeto é **centralizar informações, autenticação segura e fluxos de acesso por perfil**, garantindo que cada tipo de usuário tenha acesso apenas ao que é relevante para sua função.
-
-Este repositório representa o **back-end da aplicação**, desenvolvido com foco em boas práticas, escalabilidade e organização de código.
-
----
-
-## 🎯 Objetivo do Projeto
-
-Criar uma solução que facilite:
-
-* 👵 O acompanhamento do idoso
-* 👨‍👩‍👧 A gestão por familiares
-* 🤝 O suporte de colaboradores
-* 🔐 A segurança de acesso por múltiplos níveis de permissão
-
-Tudo isso utilizando tecnologias modernas do ecossistema JavaScript.
+<p align="center">
+  <i>“Construindo APIs reais, com problemas reais e soluções pensadas para escalar.”</i>
+</p>
 
 ---
 
-## 🧩 Perfis de Usuário (Roles)
+### 👋 Sobre o projeto
 
-A aplicação já trabalha com **controle de acesso por papel (role)**:
+O **Aurora API** é um projeto de **backend em desenvolvimento**, criado com o objetivo de simular um ambiente real de autenticação, controle de usuários e permissões por papel (roles), seguindo boas práticas modernas de desenvolvimento de APIs.
 
-* **FAMILIAR** – acesso administrativo e de gestão
-* **FAMILIAR_COLABORADOR** – acesso limitado às informações permitidas
-* **IDOSO** – acesso simplificado e direcionado
+A ideia central do projeto é ir além do CRUD simples, trabalhando conceitos que aparecem no dia a dia profissional, como **segurança, fluxo de autenticação, validações, organização de código e experiência do usuário mesmo no backend**.
 
-O redirecionamento e as permissões são definidos automaticamente após a autenticação.
+Este projeto está sendo desenvolvido com foco em aprendizado prático e evolução contínua.
 
 ---
 
-## 🔐 Autenticação e Segurança
+### ⚙️ Funcionalidades implementadas até o momento
 
-Um dos principais diferenciais do projeto é o **fluxo de autenticação em duas etapas (OTP)**:
+- 🔐 **Autenticação de usuários**
+  - Cadastro de usuários com validações
+  - Login com geração de token
+  - Estrutura preparada para autenticação segura
 
-### 🔑 Fluxo de Login
+- 👥 **Sistema de papéis (roles)**
+  - Diferenciação entre usuários comuns, colaboradores e administradores
+  - Lógica pensada para controle de permissões no backend
+  - Base pronta para middleware de autorização
 
-1. Usuário informa email e senha
-2. O backend valida as credenciais
-3. Um **código OTP** é enviado por email
-4. O usuário confirma o código
-5. O sistema autentica e redireciona conforme o perfil
+- 🔑 **Fluxo de códigos de acesso**
+  - Geração e validação de códigos
+  - Lógica para evitar múltiplas requisições desnecessárias
+  - Pensado para integração direta com o front-end
 
-Esse fluxo aumenta significativamente a segurança da aplicação.
+- 🧱 **Arquitetura organizada**
+  - Separação clara entre rotas, controllers e serviços
+  - Código estruturado para facilitar manutenção e evolução
+  - Padrões que simulam um ambiente profissional
 
----
-
-## ⚙️ Funcionalidades já implementadas
-
-### ✅ Autenticação
-
-* Login com email e senha
-* Verificação por OTP
-* Validação e expiração de código
-* Controle de sessão
-
-### ✅ Cadastro
-
-* Cadastro de usuários
-* Integração com fluxo de login + OTP
-* Redirecionamento automático após cadastro
-
-### ✅ Controle de Acesso
-
-* Separação de dashboards por perfil
-* Normalização e validação de roles
-
-### ✅ Estrutura de Serviços
-
-* Serviços organizados por domínio
-* Camada de autenticação desacoplada
-* Código preparado para crescimento do projeto
+- 🛡️ **Validações e segurança**
+  - Tratamento de erros consistente
+  - Respostas padronizadas da API
+  - Base pronta para melhorias como rate limit e logs
 
 ---
 
-## 🏗️ Arquitetura e Boas Práticas
+### 🛠️ Tecnologias utilizadas
 
-O backend foi desenvolvido seguindo princípios como:
-
-* Separação de responsabilidades
-* Código modular e reutilizável
-* Serviços isolados por contexto
-* Preparação para escalabilidade
-
-Mesmo em fase inicial, o projeto já reflete **preocupação com manutenção, legibilidade e evolução futura**.
+- **Node.js**
+- **Fastify**
+- **TypeScript**
+- **Prisma ORM**
+- **MySQL**
+- **JWT (JSON Web Token)**
 
 ---
 
-## 🧪 Status do Projeto
+### 📌 Objetivo do projeto
 
-* 🔄 Em desenvolvimento
-* 🧩 Novos módulos planejados
-* 🛠️ Melhorias constantes no fluxo de autenticação
+O Aurora API foi criado para:
 
-O projeto está sendo construído como parte do meu **desenvolvimento profissional como desenvolvedor full stack**, aplicando conceitos reais usados no mercado.
+- Consolidar conhecimentos em backend
+- Praticar arquitetura de APIs REST
+- Trabalhar fluxos reais de autenticação e autorização
+- Criar um projeto apresentável para avaliação técnica
+- Evoluir gradualmente até um sistema completo
 
 ---
 
-## 👨‍💻 Sobre o Desenvolvedor
+### 🔗 Contato & redes
 
-Sou desenvolvedor **Full Stack**, com foco na construção de aplicações reais, organizadas e escaláveis.  
-O projeto **Aurora** está sendo desenvolvido como uma solução prática para aplicar conceitos modernos de back-end, autenticação, segurança e arquitetura de APIs.
+<p align="left">
+  <a href="https://www.linkedin.com/in/erick-gabriel23/" target="_blank">
+    <img src="https://img.shields.io/badge/LinkedIn-Erick%20Gabriel-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white"/>
+  </a>
+  <a href="mailto:erick2007gabriel23@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Contato-D14836?style=for-the-badge&logo=gmail&logoColor=white"/>
+  </a>
+  <a href="https://github.com/Erick200723">
+    <img src="https://img.shields.io/badge/GitHub-Erick200723-181717?style=for-the-badge&logo=github"/>
+  </a>
+</p>
 
-Neste projeto, trabalhei diretamente com as seguintes tecnologias e ferramentas:
+---
 
-### 🛠️ Tecnologias Principais
-- **Node.js** com **TypeScript**
-- **Fastify** (API performática e tipada)
-- **Prisma ORM** (modelagem e acesso a banco de dados)
-- **Zod** (validação e tipagem de dados)
-- **JWT** para autenticação segura
-- **OTP por e-mail** para verificação de acesso
-- **Bcrypt** para criptografia de senhas
+### 🧠 Considerações finais
 
-### 🗄️ Bancos de Dados 
-- **MongoDB** (via Prisma)
+Este projeto representa meu momento atual como desenvolvedor backend em evolução.  
+Mais do que entregar um sistema “finalizado”, meu foco está em **entender o porquê das decisões**, escrever código limpo e evoluir constantemente.
 
-### 🔐 Autenticação e Segurança
-- Login com **e-mail + senha**
-- Verificação em duas etapas (**OTP**)
-- Controle de acesso por **roles** (ADMIN, COLABORADOR, IDOSO)
-- Sessões seguras com cookies e JWT
+O Aurora API ainda está em desenvolvimento, mas já reflete minha preocupação com organização, boas práticas e aprendizado real — exatamente o que busco levar para minha primeira oportunidade profissional como **desenvolvedor júnior**.
 
-### 📦 Integrações e Serviços
-- **Nodemailer / Resend** para envio de e-mails
-- **Stripe** (estrutura preparada para pagamentos)
-- **Cloudinary** para upload de imagens
-- **Firebase Admin** para integrações futuras
+<p align="center">
+  <b>✨ Em constante aprendizado. Em constante evolução. ✨</b>
+</p>
 
-### 📚 Documentação
-- **Swagger** integrado à API para documentação e testes de endpoints
-
-### 🚀 Objetivo do Projeto
-Este projeto tem como objetivo demonstrar minha capacidade de:
-- Criar APIs REST bem estruturadas
-- Aplicar boas práticas de segurança
-- Trabalhar com autenticação real
-- Organizar código pensando em crescimento e manutenção
-
-O Aurora ainda está em desenvolvimento, com novas funcionalidades sendo adicionadas continuamente, servindo como base prática de aprendizado e evolução profissional.
-
-
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:203a43,100:0f2027&height=120&section=footer"/>
+</p>
