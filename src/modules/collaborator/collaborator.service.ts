@@ -77,3 +77,15 @@ export async function registerCollaborator(
   });
 }
 
+export async function getAllCollaborators(){
+  try {
+    const collaborators = await prisma.collaborator.findMany();
+    return collaborators;
+  }catch (error){
+    throw {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Could not retrieve collaborators",
+      status_code: 500
+    };
+  }
+}

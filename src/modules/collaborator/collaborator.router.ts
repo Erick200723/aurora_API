@@ -11,6 +11,7 @@ import {
 
 import {
   registerCollaborator,
+  getAllCollaborators
 } from './collaborator.service.js';
 
 export default async function collaboratorRoutes(
@@ -36,4 +37,6 @@ export default async function collaboratorRoutes(
     }
   );
 
-}
+  app.get('/get-all-collaborators', async() => getAllCollaborators());
+  
+  }
