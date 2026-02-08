@@ -98,3 +98,25 @@ export async function verificarElderPlan(chiefId: string) {
   //proteger a rota ate que o chief tenha um plano pago
   return true;
 }
+
+export async function getEldersByChief(chiefId: string) {
+  try {
+    const elders = await prisma.elder.findMany({
+      where: { chiefId },
+      include: {
+        collaborators: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+    return elders;
+  } catch (error) {
+    throw {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Erro ao buscar seus idosos cadastrados",
+      status_code: 500
+    };
+  }
+}

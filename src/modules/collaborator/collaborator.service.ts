@@ -71,6 +71,35 @@ export async function registerCollaborator(data:any) {
   });
 }
 
+export async function getCollaboratorsByChief(chiefId: string) {
+  try {
+    const collaborators = await prisma.collaborator.findMany({
+      where: { chiefId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            status: true,
+          }
+        },
+        elder: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+    return collaborators;
+  } catch (error) {
+    throw {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Erro ao buscar colaboradores vinculados ao seu perfil",
+      status_code: 500
+    };
+  }
+}
 export async function getAllCollaborators(){
   try {
     const collaborators = await prisma.collaborator.findMany();

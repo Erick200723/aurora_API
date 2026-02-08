@@ -11,7 +11,8 @@ import {
 
 import {
   registerCollaborator,
-  getAllCollaborators
+  getAllCollaborators,
+  getCollaboratorsByChief
 } from './collaborator.service.js';
 
 export default async function collaboratorRoutes(
@@ -34,6 +35,13 @@ export default async function collaboratorRoutes(
       );
     }
   );
+
+  app.get('/my-collaborators',
+    {preHandler: [fastify.authenticate]},
+    async(req)=>{
+      return getCollaboratorsByChief(req.user.id)
+    }
+  )
 
   app.get('/get-all-collaborators', async() => getAllCollaborators());
   
