@@ -95,6 +95,7 @@ await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
 
+
 const PORT = Number(process.env.PORT) || 4000
 
 server.listen({ port: PORT, host: "0.0.0.0" })

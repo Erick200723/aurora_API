@@ -22,7 +22,6 @@ export default async function collaboratorRoutes(
   app.post(
     '/register',
     {
-      preHandler: requirePaidPlan,
       schema: {
         security: [{ bearerAuth: [] }],
         body: registerCollaboratorSchema,
@@ -31,8 +30,7 @@ export default async function collaboratorRoutes(
     },
     async (req) => {
       return registerCollaborator(
-        req.body as RegisterCollaboratorBody,
-        req.user.id
+        req.body,
       );
     }
   );
