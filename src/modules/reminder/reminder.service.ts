@@ -14,7 +14,7 @@ export async function createReminder(data: {
       title: data.title,
       time: data.time,
       type: data.type,
-      daysOfWeek: data.daysOfWeek,
+      daysOfWeek:data.daysOfWeek,
       elderId: data.elderId,
       isCompleted: false,
     }

@@ -68,10 +68,9 @@ model Reminder {
   title       String
   time        String  
   type        String   // Medicamento, Refeição, Rotina, Evento
-  daysOfWeek  Int[]    // [1, 2, 3, 4, 5, 6, 7] onde 1 é Segunda e 7 é Domingo
+  daysOfWeek  Int[]    
   isCompleted Boolean  @default(false)
-  lastDone    DateTime? // Para controlar a reciclagem diária
-  
+  lastDone    DateTime?
   elderId     String   @db.ObjectId
   elder       Elder    @relation(fields: [elderId], references: id)
   
