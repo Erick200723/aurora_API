@@ -2,6 +2,7 @@ import {Prisma,PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { generateOTP, otpExpires } from '../../utils/otp.js';
 import { sendOTPEmail } from '../../utils/mail.js';
+import { id } from 'zod/v4/locales';
 
 const prisma = new PrismaClient();
 

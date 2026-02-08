@@ -38,6 +38,7 @@
     "fastify-type-provider-zod": "^6.1.0",
     "firebase-admin": "^13.6.0",
     "mongodb": "^7.0.0",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "resend": "^6.6.0",
     "stripe": "^20.1.0",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.4",
     "dotenv": "^17.2.3",
     "prisma": "6.19",

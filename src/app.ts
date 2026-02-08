@@ -20,6 +20,8 @@ import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
 import paymentRoutes from './modules/payment/payment.checkout.js';
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
 import cookie from "@fastify/cookie";
+import cron from 'node-cron';
+import { dailyResetReminders } from './modules/reminder/reminder.service.js';
 
 
 
@@ -83,7 +85,10 @@ await server.register(swagger, {
   transform: jsonSchemaTransform
 });
 
-
+cron.schedule('0 0 * * *', async () => {
+    console.log('Iniciando limpeza diária dos lembretes...');
+    await dailyResetReminders();
+});
 
 await server.register(swaggerUI, {
   routePrefix: '/docs'
