@@ -18,6 +18,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import elderRoutes from './modules/elder/elder.routes.js';
 import collaboratorRoutes from './modules/collaborator/collaborator.router.js';
 import paymentRoutes from './modules/payment/payment.checkout.js';
+import remiderRoutes from './modules/reminder/reminder.routes.js'
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
 import cookie from "@fastify/cookie";
 import cron from 'node-cron';
@@ -99,7 +100,7 @@ await server.register(collaboratorRoutes, { prefix: '/collaborators' });
 await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
-
+await server.register(remiderRoutes, {prefix: '/lembreste'})
 
 const PORT = Number(process.env.PORT) || 4000
 
