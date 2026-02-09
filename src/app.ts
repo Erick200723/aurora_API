@@ -26,6 +26,7 @@ import { dailyResetReminders } from './modules/reminder/reminder.service.js';
 
 
 
+
 const server = fastify({
   logger: true,
   bodyLimit: 1048576
@@ -100,7 +101,7 @@ await server.register(collaboratorRoutes, { prefix: '/collaborators' });
 await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
-await server.register(remiderRoutes, {prefix: '/lembreste'})
+await server.register(remiderRoutes, { prefix: '/reminders' }) 
 
 const PORT = Number(process.env.PORT) || 4000
 

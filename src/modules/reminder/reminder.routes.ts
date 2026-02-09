@@ -6,7 +6,7 @@ import {
     markReminderAsDone,
     updateReminder,
     deleteReminder
-} from './reminder.service'
+} from './reminder.service.js'
 
 export default async function remiderRoutes(fastify: FastifyInstance) {
     
