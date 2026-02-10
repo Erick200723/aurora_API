@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,30 +6,64 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
-//usuarios do sistema (familiares, admin, idosos)
-model User {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
 
-  email String @unique
-  password String
-  name String
-  role String // "FAMILIAR" | "ADMIN" | "IDOSO"
-  status String @default("PENDING") 
+// Usuários do sistema
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String
+  role      String   // "FAMILIAR" | "ADMIN" | "IDOSO"
+  status    String   @default("PENDING")
   planPaid  Boolean  @default(false)
   createdAt DateTime @default(now())
-  elders Elder[]@relation("ChiefElders")
-  // quando este user é o colaborador
-  collaborations Collaborator[] @relation("CollaboratorUser")
 
-  // quando este user é o chief de colaboradores
-  collaborators Collaborator[] @relation("CollaboratorChief")
+  // RELAÇÃO CHAVE: Se o User for um IDOSO, ele aponta para seu perfil de Elder
+  // Isso permite que no login você saiba exatamente qual o ID de idoso dele.
+  elderProfile   Elder?  @relation("UserToElder", fields: [elderProfileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  elderProfileId String? @unique @db.ObjectId
+
+  // Idosos que este usuário gerencia (como Familiar/Admin)
+  managedElders Elder[] @relation("ChiefElders")
+
+  // Colaboração
+  collaborations  Collaborator[] @relation("CollaboratorUser")
+  chiefOfCollaborators Collaborator[] @relation("CollaboratorChief")
+
+  payments Payment[]
 }
 
-model Collaborator {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
+// Idosos cadastrados no sistema
+model Elder {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  cpf              String   @unique
+  name             String
+  age              Int
+  birthData        DateTime?
+  emergencyContact String
+  medicalConditions String[]
+  medications      String[]
+  createdAt        DateTime @default(now())
 
-  userId String @db.ObjectId
-  user   User   @relation("CollaboratorUser", fields: [userId], references: [id])
+  // Dono do cadastro (Familiar/Admin que cadastrou)
+  chiefId String @db.ObjectId
+  chief   User   @relation("ChiefElders", fields: [chiefId], references: [id])
+
+  // RELAÇÃO REVERSA: O usuário que "é" este idoso
+  userAccount User? @relation("UserToElder")
+
+  collaborators Collaborator[]
+  reminders     Reminder[]
+  emergencies   Emergency[]
+  audios        Audio[]
+}
+
+// Tabela de ligação para Colaboradores (Cuidadores extras)
+model Collaborator {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId  String @db.ObjectId
+  user    User   @relation("CollaboratorUser", fields: [userId], references: [id])
 
   elderId String @db.ObjectId
   elder   Elder  @relation(fields: [elderId], references: [id])
@@ -41,88 +74,71 @@ model Collaborator {
   createdAt DateTime @default(now())
 }
 
-
-
-//idosos cadastrados no sistema
-model Elder {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
-  cpf String @unique
-  name String
-  chiefId String @db.ObjectId
-  chief User @relation("ChiefElders", fields: [chiefId], references: [id])
-  age Int
-  birthData DateTime? 
-  emergencyContact String
-  medicalConditions String[]
-  medications String[]
-  collaborators Collaborator[]
-
-  createdAt DateTime @default(now())
-
-  reminders Reminder[]
-}
-
-// lembretes de alimentacao, medicacao, atividades
 model Reminder {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   title       String
-  time        String  
-  type        String   // Medicamento, Refeição, Rotina, Evento
-  daysOfWeek  Int[]    
-  isCompleted Boolean  @default(false)
+  time        String
+  type        String    // Medicamento, Refeição, Rotina, Evento
+  daysOfWeek  Int[]
+  isCompleted Boolean   @default(false)
   lastDone    DateTime?
-  elderId     String   @db.ObjectId
-  elder       Elder    @relation(fields: [elderId], references: id)
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  elderId     String    @db.ObjectId
+  elder       Elder     @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([elderId])
 }
-model Emergency{
-  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+
+model Emergency {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   elderId   String   @db.ObjectId
+  elder     Elder    @relation(fields: [elderId], references: [id], onDelete: Cascade)
   at        DateTime @default(now())
-  location  String?  // opicional
+  location  String?
   resolved  Boolean  @default(false)
 }
-//audios enviados pelos idosos para analise
+
 model Audio {
-  id        String   @id @map("_id") @default(auto()) @db.ObjectId
-  elderId   String   @db.ObjectId
-  url       String
-  duration  Int      // seconds
-  transcript String?
-  status    String   // "PENDING" | "APPROVED" | "REJECTED"
-  createdAt DateTime @default(now())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  elderId     String   @db.ObjectId
+  elder       Elder    @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  url         String
+  duration    Int
+  transcript  String?
+  status      String   @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  createdAt   DateTime @default(now())
 }
 
+// Segurança e Logs
 model VerificationCode {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
-  email String
-  code String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  code      String
   expiresAt DateTime
-  used Boolean @default(false)
+  used      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
 model OTPResendLog {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
-  email String
-  ip String
-  sentAt DateTime @default(now())
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String
+  ip      String
+  sentAt  DateTime @default(now())
 
   @@index([email])
   @@index([ip])
 }
 
 model Payment {
-  id String @id @map("_id") @default(auto()) @db.ObjectId
-  userId String @db.ObjectId
-  type String
-  amount Int
-  stripeSessionId  String   @unique
-  status String @default("PENDING")
-  createdAt DateTime @default(now())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id])
+  type            String
+  amount          Int
+  stripeSessionId String   @unique
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
 }
-

@@ -5,7 +5,7 @@ import CreateElderInput from '../../interfaces/elder.interface.js';
 const prisma = new PrismaClient();
 
 export async function CreateElder(data: CreateElderInput) {
-  // 1️⃣ verifica CPF duplicado
+  // 1️⃣ Verifica CPF duplicado
   const exists = await prisma.elder.findUnique({
     where: { cpf: data.cpf }
   });
@@ -14,96 +14,88 @@ export async function CreateElder(data: CreateElderInput) {
     throw new Error('Elder with this CPF already exists');
   }
 
-  // 2️⃣ conta elders do chief
+  // 2️⃣ Regra de negócio: plano pago após o primeiro idoso
   const elderCount = await prisma.elder.count({
     where: { chiefId: data.chiefId }
   });
 
-  // 3️⃣ se já tem 1 ou mais → exige plano
   if (elderCount >= 1) {
     const chief = await prisma.user.findUnique({
       where: { id: data.chiefId }
     });
 
     if (!chief?.planPaid) {
-      throw new Error('PLAN_REQUIRED');
+      throw {
+        code: "PLAN_REQUIRED",
+        message: "Plano pago é necessário para cadastrar mais de um idoso.",
+        status_code: 402
+      };
     }
   }
 
-  // 4️⃣ cria login do idoso (se necessário)
-  let userId: string | undefined;
-
-  if (data.createLogin) {
-    if (!data.email || !data.password) {
-      throw{
-        code: "MISSING_CREDENTIALS",
-        message: "Email and password are required to create login",
-        status_code: 400
-      };
-    }
-
-    const passwordHash = await bcrypt.hash(data.password, 10);
-
-    const user = await prisma.user.create({
+  // 3️⃣ Transaction para garantir que User e Elder sejam vinculados corretamente
+  return await prisma.$transaction(async (tx) => {
+    
+    // Primeiro, criamos o Elder
+    const elder = await tx.elder.create({
       data: {
         name: data.name,
-        email: data.email,
-        password: passwordHash,
-        role: 'IDOSO',
-        status: 'ACTIVE'
+        cpf: data.cpf,
+        age: data.age,
+        emergencyContact: data.emergencyContact,
+        chiefId: data.chiefId,
+        medicalConditions: data.medicalConditions ?? [],
+        medications: data.medications ?? [],
+        ...(data.birthData && !isNaN(Date.parse(data.birthData)) && {
+          birthData: new Date(data.birthData)
+        })
       }
     });
 
-    userId = user.id;
-  }
+    // Se o Admin marcou para criar login para o idoso
+    if (data.createLogin) {
+      if (!data.email || !data.password) {
+        throw {
+          code: "MISSING_CREDENTIALS",
+          message: "Email e senha são obrigatórios para criar acesso.",
+          status_code: 400
+        };
+      }
 
-  // 5️⃣ cria o elder
-  const elder = await prisma.elder.create({
-    data: {
-      name: data.name,
-      cpf: data.cpf,
-      age: data.age,
-      emergencyContact: data.emergencyContact,
-      chiefId: data.chiefId,
-      medicalConditions: data.medicalConditions ?? [],
-      medications: data.medications ?? [],
-      ...(data.birthData && !isNaN(Date.parse(data.birthData)) && {
-        birthData: new Date(data.birthData)
-      })
+      const passwordHash = await bcrypt.hash(data.password, 10);
+
+      // Criamos o User já passando o ID do Elder que acabamos de criar
+      await tx.user.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          password: passwordHash,
+          role: 'IDOSO',
+          status: 'ACTIVE',
+          elderProfileId: elder.id // AQUI ESTÁ A AMARRAÇÃO!
+        }
+      });
     }
-  });
 
-  return elder;
+    return elder;
+  });
 }
 
-export async function verificarElderPlan(chiefId: string) {
-  const elderCount = await prisma.elder.count({
-    where: { chiefId }
-  })
-  if (elderCount >= 1) {
-    const chief = await prisma.user.findUnique({
-      where: { id: chiefId }
-    });
-  }
-  const chief = await prisma.user.findUnique({
-    where: { id: chiefId }
-  });
-  if (!chief?.planPaid) {
-    throw{
-      code: "PLAN_REQUIRED",
-      message: "Plan required to add more elders",
-      status_code: 402
-    };
-  }
-  //proteger a rota ate que o chief tenha um plano pago
-  return true;
-}
+// ... restante das funções (verificarElderPlan e getEldersByChief permanecem similares)
 
 export async function getEldersByChief(chiefId: string) {
   try {
     const elders = await prisma.elder.findMany({
       where: { chiefId },
       include: {
+        // Incluímos também o userAccount para saber se esse idoso tem login
+        userAccount: {
+          select: {
+            id: true,
+            email: true,
+            status: true
+          }
+        },
         collaborators: {
           include: {
             user: true

@@ -22,7 +22,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
   /* ================= REGISTER ================= */
-  app.post("/register", { schema: { body: registerSchema, tags: ["Auth"] } }, async (req, reply) => {
+  app.post("/register", { 
+    schema: { 
+      body: registerSchema, 
+      tags: ["Autenticação"],
+      description: "Registra um novo usuário familiar/admin" 
+    } 
+  }, async (req, reply) => {
     try {
       return await registerFamiliar(req.body);
     } catch (err: any) {
@@ -33,8 +39,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
-  /* ================= LOGIN ================= */
-  app.post("/login", { schema: { body: loginSchema } }, async (req, reply) => {
+  /* ================= LOGIN (FAMILIAR/ADMIN) ================= */
+  app.post("/login", { 
+    schema: { 
+      body: loginSchema, 
+      tags: ["Autenticação"],
+      description: "Inicia o login e envia OTP para e-mail" 
+    } 
+  }, async (req, reply) => {
     try {
       return await loginUser(req.body.email, req.body.password);
     } catch (err: any) {
@@ -46,7 +58,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   /* ================= LOGIN ELDER ================= */
-  app.post("/login-elder", { schema: { body: loginElderSchema } }, async (req, reply) => {
+  app.post("/login-elder", { 
+    schema: { 
+      body: loginElderSchema, 
+      tags: ["Autenticação"],
+      description: "Inicia o login para idosos cadastrados" 
+    } 
+  }, async (req, reply) => {
     try {
       return await loginElder(req.body.email);
     } catch (err: any) {
@@ -57,43 +75,60 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
-  /* ================= VERIFY OTP ================= */
+  /* ================= VERIFY OTP & GENERATE TOKEN ================= */
   app.post(
     "/verify",
-    { schema: { body: verifyCodeSchema } },
+    { 
+      schema: { 
+        body: verifyCodeSchema, 
+        tags: ["Autenticação"],
+        description: "Valida o OTP e gera o token de acesso (JWT)" 
+      } 
+    },
     async (req, reply) => {
       try {
+        // O user retornado aqui deve conter o elderProfileId vindo do banco
         const user = await verifyCode(req.body.email, req.body.code);
 
+        // PAYLOAD DO JWT: Adicionamos o elderProfileId aqui para que o 
+        // front-end possa ler isso do token decodificado
         const token = fastify.jwt.sign({
           id: user.id,
-          role: user.role
+          role: user.role,
+          elderId: user.elderProfileId || undefined // AMARRAÇÃO AQUI
         },
         { expiresIn: "7d" }
       );
 
         return reply.send({
-          user,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            elderId: user.elderProfileId // Retorno explícito para o estado do Front
+          },
           token: token ?? undefined
-          
         });
       } catch (err: any) {
         if (err.message === "INVALID_CODE") {
           return reply.status(400).send({ message: "Código inválido" });
         }
-
         if (err.message === "CODE_EXPIRED") {
           return reply.status(400).send({ message: "Código expirado" });
         }
-
         throw err;
       }
     }
   );
 
-
   /* ================= RESEND OTP ================= */
-  app.post("/resend-otp", { schema: { body: resendOTPSchema } }, async (req, reply) => {
+  app.post("/resend-otp", { 
+    schema: { 
+      body: resendOTPSchema, 
+      tags: ["Autenticação"] 
+    } 
+  }, async (req, reply) => {
     try {
       return await resendOTP(req.body.email, req.ip);
     } catch (err: any) {
@@ -104,6 +139,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
-  app.get("/all-users", async () => getAllUsers());
-  app.get("/all-elders", async () => getAllElders());
+  /* ================= DEBUG/ADMIN ROUTES ================= */
+  app.get("/all-users", { schema: { tags: ["Admin"] } }, async () => getAllUsers());
+  app.get("/all-elders", { schema: { tags: ["Admin"] } }, async () => getAllElders());
 }
