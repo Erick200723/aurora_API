@@ -130,7 +130,7 @@ export async function loginElder(email: string) {
 /**
  * VERIFICAÇÃO DO OTP
  */
-export async function verifyCode(email: string, code: string,) {
+export async function verifyCode(email: string, code: string) {
   const record = await prisma.verificationCode.findFirst({
     where: { email, code, used: false },
     orderBy: { createdAt: "desc" }

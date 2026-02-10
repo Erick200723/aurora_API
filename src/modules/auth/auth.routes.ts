@@ -87,15 +87,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
     async (req, reply) => {
       try {
-        // O user retornado aqui deve conter o elderProfileId vindo do banco
         const user = await verifyCode(req.body.email, req.body.code);
-
-        // PAYLOAD DO JWT: Adicionamos o elderProfileId aqui para que o 
-        // front-end possa ler isso do token decodificado
         const token = fastify.jwt.sign({
           id: user.id,
           role: user.role,
-          elderId: user.elderProfileId || undefined // AMARRAÇÃO AQUI
+          elderId: user.elderProfileId || undefined 
         },
         { expiresIn: "7d" }
       );
