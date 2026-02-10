@@ -56,7 +56,8 @@ await server.register(cors, {
     'http://localhost:3000',
     'https://aurora-dashboard-one.vercel.app'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 });
 
 await server.register(cookie, {
