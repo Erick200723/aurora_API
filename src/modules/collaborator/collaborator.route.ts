@@ -17,18 +17,49 @@ import {
 export default async function collaboratorRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post('/register', {
-    preHandler: [authenticate], 
-    schema: { tags: ['Colaboradores'], security: [{ bearerAuth: [] }], body: registerCollaboratorSchema }
-  }, async (req) => registerCollaborator(req.body));
+  app.post(
+    '/register',
+    {
+      // Adicione o authenticate aqui para podermos pegar o req.user.id se precisar
+      preHandler: [authenticate], 
+      schema: {
+        security: [{ bearerAuth: [] }],
+        body: registerCollaboratorSchema,
+        tags: ['Collaborator']
+      }
+    },
+    async (req) => {
+      // O service agora cuida da lógica de créditos e vinculação
+      return registerCollaborator(req.body);
+    }
+  );
 
-  app.get('/my-collaborators', {
-    preHandler: [authenticate],
-    schema: { tags: ['Colaboradores'], security: [{ bearerAuth: [] }], description: "Lista colaboradores do Chief logado" }
-  }, async (req) => getCollaboratorsByChief(req.user.id));
+  app.get('/my-collaborators',
+    { preHandler: [authenticate] },
+    async (req) => {
+      return getCollaboratorsByChief(req.user.id);
+    }
+  );
 
-  app.delete('/:id', {
-    preHandler: [authenticate], 
-    schema: { tags: ['Colaboradores'], security: [{ bearerAuth: [] }], params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] } }
-  }, async (req) => deletCollaborator((req.params as any).id, req.user.id));
+  app.get('/get-all-collaborators', async () => getAllCollaborators());
+
+  app.delete('/delete-colaborador',{
+     preHandler: [authenticate], 
+    schema: {
+      security: [{ bearerAuth: [] }],
+      tags: ['Collaborator'],
+      params: { // Validando que o ID deve ser uma string (ObjectId)
+        type: 'object',
+        properties: {
+          id: { type: 'string' }
+        },
+        required: ['id']
+      }
+    }
+  },
+  async(req)=>{
+    const { id } = req.params as { id: string };
+    return deletCollaborator(id, req.user.id);
+  }
+  )
 }

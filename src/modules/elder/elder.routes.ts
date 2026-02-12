@@ -7,18 +7,58 @@ import { authenticate } from '../../hooks/authenticate.js';
 export default async function elderRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post('/', {
-    preHandler: [authenticate], 
-    schema: { tags: ['Idosos'], security: [{ bearerAuth: [] }], body: createElderSchema }
-  }, async (req) => CreateElder({ ...req.body, chiefId: req.user.id }));
+  // Criar Idoso (com amarração de login)
+  app.post(
+    '/',
+    {
+      preHandler: [authenticate], 
+      schema: {
+        security: [{ bearerAuth: [] }],
+        body: createElderSchema,
+        tags: ['Elder'],
+        description: 'Cadastra um idoso e vincula um login (role IDOSO) se solicitado'
+      }
+    },
+    async (request) => {
+      // Passamos o ID do Chief (usuário logado) para o serviço
+      return CreateElder({
+        ...request.body,
+        chiefId: request.user.id
+      });
+    }
+  );
 
-  app.get('/my-elders', {
-    preHandler: [authenticate],
-    schema: { tags: ['Idosos'], security: [{ bearerAuth: [] }] }
-  }, async (req) => getEldersByChief(req.user.id));
+  // Buscar idosos gerenciados pelo Chief logado
+  app.get('/my-elders', // Mudei para plural para ser semântico
+    {
+      preHandler: [authenticate],
+      schema: {
+        security: [{ bearerAuth: [] }],
+        tags: ['Elder'],
+        description: 'Retorna todos os idosos vinculados ao administrador logado'
+      }
+    },
+    async (req) => {
+      return getEldersByChief(req.user.id);
+    }
+  );
 
-  app.delete('/:id', {
-    preHandler: [authenticate],
-    schema: { tags: ['Idosos'], security: [{ bearerAuth: [] }], params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] } }
-  }, async (req) => deletElder((req.params as any).id, req.user.id));
+  app.delete('/delete-elder',{
+      preHandler: [authenticate],
+      schema: {
+        security: [{ bearerAuth: [] }],
+        tags: ['Elder'],
+        params: {
+          type: 'object',
+          properties: { id: { type: 'string' } },
+          required: ['id']
+        },
+        description: "Remove um idoso e sua conta de acesso vinculada"
+      }
+    },
+    async(req)=>{
+      const { id } = req.params as { id: string };
+      return deletElder(id, req.user.id);
+    }
+    )
 }
