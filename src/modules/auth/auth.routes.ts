@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
-import {authenticate} from '../../hooks/authenticate'
+import {authenticate} from '../../hooks/authenticate.js'
 import {
   registerSchema,
   loginSchema,
