@@ -21,8 +21,8 @@ model User {
   createdAt DateTime @default(now())
 
   elderProfile   Elder?  @relation("UserToElder", fields: [elderProfileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  elderProfileId String? @unique @db.ObjectId
 
+  elderProfileId String? @db.ObjectId
   managedElders Elder[] @relation("ChiefElders")
 
   collaborations       Collaborator[] @relation("CollaboratorUser")
@@ -47,7 +47,7 @@ model Elder {
   chief   User   @relation("ChiefElders", fields: [chiefId], references: [id])
 
   // RELAÇÃO REVERSA: O usuário que "é" este idoso
-  userAccount User? @relation("UserToElder")
+  userAccount User[] @relation("UserToElder")
 
   collaborators Collaborator[]
   reminders     Reminder[]
