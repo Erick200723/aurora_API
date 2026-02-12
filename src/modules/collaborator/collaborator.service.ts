@@ -1,40 +1,49 @@
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
-import RegisterCollaboratorInput from '../../interfaces/Collaborator.interface.js';
 import { generateOTP, otpExpires } from '../../utils/otp.js';
 import { sendOTPEmail } from '../../utils/mail.js';
 
 const prisma = new PrismaClient();
 
-export async function registerCollaborator(data:any) {
+// 1. Sua função de registro, agora com a lógica de créditos "indestrutível"
+export async function registerCollaborator(data: any) {
   return prisma.$transaction(async (tx) => {
-    // 1. Verifica se o email do familiar já existe
     const exists = await tx.user.findUnique({
       where: { email: data.email }
     });
 
     if (exists) {
-      throw { code: "EMAIL_ALREADY_REGISTERED", message: "Email ja registrado", status_code: 400 };
+      throw { code: "EMAIL_ALREADY_REGISTERED", message: "Email já registrado", status_code: 400 };
     }
 
-    // 2. Busca o Idoso pelo CPF e inclui os dados do Usuário (Chief) vinculado a ele
     const elder = await tx.elder.findUnique({
       where: { cpf: data.elderCpf },
-      include: {
-        chief: true  
-      }
+      include: { chief: true }
     });
 
-    if (!elder) {
-      throw { code: "ELDER_NOT_FOUND", message: "Idoso não encontrado com este CPF", status_code: 404 };
+    if (!elder || !elder.chief) {
+      throw { code: "ELDER_NOT_FOUND", message: "Idoso ou responsável não encontrado", status_code: 404 };
     }
 
-    if (!elder.chief || elder.chief.planPaid !== true) {
-      throw {
-        code: "PLAN_NOT_PAID",
-        message: "O responsável por este idoso não possui um plano ativo. Cadastro não permitido.",
-        status_code: 403
-      };
+    // --- LÓGICA DE CRÉDITOS ---
+    const collaboratorCount = await tx.collaborator.count({
+      where: { chiefId: elder.chiefId }
+    });
+
+    // Se já tem 1 colaborador, precisa gastar crédito
+    if (collaboratorCount >= 1) {
+      if (elder.chief.collaboratorCredits <= 0) {
+        throw {
+          code: "PLAN_REQUIRED",
+          message: "Limite de 1 colaborador gratuito atingido. Adquira créditos.",
+          status_code: 402
+        };
+      }
+
+      await tx.user.update({
+        where: { id: elder.chiefId },
+        data: { collaboratorCredits: { decrement: 1 } }
+      });
     }
 
     const hash = await bcrypt.hash(data.password, 10);
@@ -66,7 +75,6 @@ export async function registerCollaborator(data:any) {
     });
 
     await sendOTPEmail(data.email, code);
-
     return { message: 'Verification code sent to email' };
   });
 }
@@ -100,14 +108,50 @@ export async function getCollaboratorsByChief(chiefId: string) {
     };
   }
 }
-export async function getAllCollaborators(){
+
+// 3. Sua função de listagem geral (Recuperada!)
+export async function getAllCollaborators() {
   try {
     const collaborators = await prisma.collaborator.findMany();
     return collaborators;
-  }catch (error){
+  } catch (error) {
     throw {
       code: "INTERNAL_SERVER_ERROR",
       message: "Could not retrieve collaborators",
+      status_code: 500
+    };
+  }
+}
+
+export async function deletCollaborator(id: string, chiefId: string) {
+  try {
+    // 1. Localiza o colaborador garantindo que ele pertence ao Chief logado
+    const collab = await prisma.collaborator.findFirst({
+      where: { 
+        id: id,
+        chiefId: chiefId 
+      }
+    });
+
+    if (!collab) {
+      throw { 
+        code: "COLLABORATOR_NOT_FOUND", 
+        message: "Colaborador não encontrado ou você não tem permissão para removê-lo.", 
+        status_code: 404 
+      };
+    }
+    return await prisma.$transaction(async (tx) => {
+      await tx.collaborator.delete({ where: { id } });
+      
+      await tx.user.delete({ where: { id: collab.userId } });
+
+      return { message: "Colaborador removido com sucesso" };
+    });
+  } catch (error: any) {
+    if (error.status_code) throw error;
+    throw {
+      code: "DELETE_FAILED",
+      message: "Erro interno ao remover colaborador",
       status_code: 500
     };
   }

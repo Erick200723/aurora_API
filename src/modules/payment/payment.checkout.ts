@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { createCheckoutSession } from './payment.service.js';
+import { createCheckoutSession, PaymentType } from './payment.service.js';
 import { authenticate } from '../../hooks/authenticate.js';
 
 export default async function paymentRoutes(fastify: FastifyInstance) {
@@ -13,7 +13,7 @@ export default async function paymentRoutes(fastify: FastifyInstance) {
         preHandler: authenticate,
         schema: {
           tags: ['Payments'],
-          summary: 'Criar sessão de checkout Stripe',
+          summary: 'Comprar créditos (Idoso ou Colaborador)',
           body: z.object({
             type: z.enum(['ELDER_EXTRA', 'COLLABORATOR'])
           }),
@@ -25,11 +25,10 @@ export default async function paymentRoutes(fastify: FastifyInstance) {
         }
       },
       async (request) => {
-        const { type } = request.body;
+        const { type } = request.body as { type: PaymentType };
         const userId = (request.user as { id: string }).id;
 
         return await createCheckoutSession(userId, type);
       }
   );
-
 }

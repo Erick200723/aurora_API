@@ -9,30 +9,27 @@ datasource db {
 
 // Usuários do sistema
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String
-  role      String   // "FAMILIAR" | "ADMIN" | "IDOSO"
-  status    String   @default("PENDING")
-  planPaid  Boolean  @default(false)
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  email    String @unique
+  password String
+  name     String
+  role     String
+  status   String @default("PENDING")
+  elderCredits        Int @default(0)
+  collaboratorCredits Int @default(0)
+  
   createdAt DateTime @default(now())
 
-  // RELAÇÃO CHAVE: Se o User for um IDOSO, ele aponta para seu perfil de Elder
-  // Isso permite que no login você saiba exatamente qual o ID de idoso dele.
   elderProfile   Elder?  @relation("UserToElder", fields: [elderProfileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   elderProfileId String? @unique @db.ObjectId
 
-  // Idosos que este usuário gerencia (como Familiar/Admin)
   managedElders Elder[] @relation("ChiefElders")
 
-  // Colaboração
-  collaborations  Collaborator[] @relation("CollaboratorUser")
+  collaborations       Collaborator[] @relation("CollaboratorUser")
   chiefOfCollaborators Collaborator[] @relation("CollaboratorChief")
 
   payments Payment[]
 }
-
 // Idosos cadastrados no sistema
 model Elder {
   id               String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -95,6 +92,7 @@ model Reminder {
 model Emergency {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   elderId   String   @db.ObjectId
+  chiefId   String   @db.ObjectId
   elder     Elder    @relation(fields: [elderId], references: [id], onDelete: Cascade)
   at        DateTime @default(now())
   location  String?
@@ -136,7 +134,7 @@ model Payment {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   userId          String   @db.ObjectId
   user            User     @relation(fields: [userId], references: [id])
-  type            String
+  type            String  
   amount          Int
   stripeSessionId String   @unique
   status          String   @default("PENDING")

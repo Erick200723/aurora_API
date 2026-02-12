@@ -25,27 +25,39 @@ export async function stripeWebhook(app: FastifyInstance) {
         process.env.STRIPE_WEBHOOK_SECRET!
       );
     } catch (err: any) {
+      console.error(`Webhook Error: ${err.message}`);
       return reply.status(400).send({
-        error: `Webhook Error: ${err.message} erro ao ao validar assinatura`,
+        error: `Webhook Error: ${err.message}`,
       });
     }
 
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-
+        
         const userId = session.metadata?.userId;
+        const type = session.metadata?.type; 
 
-        if (userId) {
+        if (userId && type) {
           await prisma.payment.update({
             where: { stripeSessionId: session.id },
             data: { status: 'COMPLETED' },
           });
 
-          await prisma.user.update({
-            where: { id: userId },
-            data: { planPaid: true },
-          });
+          if (type === 'ELDER_EXTRA') {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { elderCredits: { increment: 1 } },
+            });
+            console.log(`Crédito de IDOSO adicionado para user ${userId}`);
+          } 
+          else if (type === 'COLLABORATOR') {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { collaboratorCredits: { increment: 1 } },
+            });
+            console.log(`Crédito de COLABORADOR adicionado para user ${userId}`);
+          }
         }
         break;
       }
@@ -54,9 +66,6 @@ export async function stripeWebhook(app: FastifyInstance) {
         console.log(`Evento ignorado: ${event.type}`);
     }
 
-
-
-    return reply.status(200).send({ received: true },);
+    return reply.status(200).send({ received: true });
   });
-
 }

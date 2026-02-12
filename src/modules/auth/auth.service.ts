@@ -221,39 +221,27 @@ export async function getAllElders(){
   }
 }
 
-export async function putNameUser(id:string, name:string){
-  try{
-    //verificar se o usuario existe e se estar logado
-    const user = await prisma.user.findUnique({
-      where: {id}
+export async function putNameUser(id: string, name: string) {
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data: { name },
+      select: { id: true, name: true, email: true } // Não retorna a senha
     });
-    if(!user){
-      throw{
-        code: "USER_NOT_FOUND",
-        message: "User not found",
-        status_code: 404
-      };
-    }
-    const log = await loginUser(user.email, user.password);
-    if(!log){
-      throw{
-        code: "LOGIN_FAILED",
-        message: "User login failed",
-        status_code: 500
-      };
-    }else{
-      console.log('User logged in successfully');
-    }
-    const updatedUser = await prisma.user.update({
-      where: {id},
-      data: {name}
-    });
-    return updatedUser;
-  }catch(error){
-    throw {
-      code: "UPDATE_FAILED",
-      message: "Failed to update user name",
-      status_code: 500
-    }
-    }
+  } catch (error) {
+    throw { code: "UPDATE_FAILED", message: "Erro ao atualizar nome", status_code: 500 };
   }
+}
+
+export async function deletFamiliarAdim(id:string){
+  try{
+    const deletUser = await prisma.user.delete({
+      where: {id}
+    })
+    return deletUser
+
+
+  }catch(err:any){
+    console.error("erro ao deletar seu usuario"+err)
+  }
+}

@@ -1,18 +1,17 @@
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
-import { check, string } from 'zod';
 
 const prisma = new PrismaClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
+  apiVersion: '2025-12-15.clover', 
 });
 
-type PaymentType = "ELDER_EXTRA" | "COLLABORATOR";
+export type PaymentType = "ELDER_EXTRA" | "COLLABORATOR";
 
 const PRICE = {
-    ELDER_EXTRA: 3000, //equivale a 10.00 BR
-    COLLABORATOR: 3000, //equivale a 10.00 BR
+    ELDER_EXTRA: 3000,   // R$ 30,00
+    COLLABORATOR: 3000,  // R$ 30,00
 }
 
 export async function createCheckoutSession(
@@ -36,19 +35,19 @@ export async function createCheckoutSession(
             price_data: {
                 currency: 'brl',
                 product_data:{
-                    name: type === "COLLABORATOR"
-                    ?'Colaborador adicional'
-                    :'Extra idoso'
+                    name: type === "COLLABORATOR" 
+                        ? 'Crédito: Colaborador Adicional' 
+                        : 'Crédito: Idoso Adicional'
                 },
                 unit_amount: amount
             },
             quantity: 1
-        }
-    ],
+        }],
         success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
         metadata:{
-            userId, type
+            userId, 
+            type 
         }
     });
 
@@ -61,6 +60,7 @@ export async function createCheckoutSession(
             status: 'PENDING'
         }
     });
+
     if(!session.url){
         throw{
             code: "SESSION_URL_NOT_FOUND",
@@ -68,7 +68,8 @@ export async function createCheckoutSession(
             status_code: 500
         };
     }
-   return{
+
+   return {
     checkoutUrl: session.url
    }
 }
