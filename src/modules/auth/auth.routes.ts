@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
-import {authenticate} from '../../hooks/authenticate.js'
+import { z } from "zod"; // Importação necessária para corrigir o Swagger
+import { authenticate } from '../../hooks/authenticate.js';
 import {
   registerSchema,
   loginSchema,
@@ -31,15 +32,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
       tags: ["Autenticação"],
       description: "Registra um novo usuário familiar/admin" 
     } 
-  }, async (req, reply) => {
-    try {
-      return await registerFamiliar(req.body);
-    } catch (err: any) {
-      if (err.message === "EMAIL_ALREADY_REGISTERED") {
-        return reply.status(400).send({ message: "Email já registrado" });
-      }
-      throw err;
-    }
+  }, async (req) => {
+    return await registerFamiliar(req.body);
   });
 
   /* ================= LOGIN (FAMILIAR/ADMIN) ================= */
@@ -49,15 +43,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
       tags: ["Autenticação"],
       description: "Inicia o login e envia OTP para e-mail" 
     } 
-  }, async (req, reply) => {
-    try {
-      return await loginUser(req.body.email, req.body.password);
-    } catch (err: any) {
-      if (err.message === "INVALID_CREDENTIALS") {
-        return reply.status(400).send({ message: "Credenciais inválidas" });
-      }
-      throw err;
-    }
+  }, async (req) => {
+    return await loginUser(req.body.email, req.body.password);
   });
 
   /* ================= LOGIN ELDER ================= */
@@ -67,59 +54,36 @@ export default async function authRoutes(fastify: FastifyInstance) {
       tags: ["Autenticação"],
       description: "Inicia o login para idosos cadastrados" 
     } 
-  }, async (req, reply) => {
-    try {
-      return await loginElder(req.body.email);
-    } catch (err: any) {
-      if (err.message === "INVALID_CREDENTIALS") {
-        return reply.status(400).send({ message: "Credenciais inválidas" });
-      }
-      throw err;
-    }
+  }, async (req) => {
+    return await loginElder(req.body.email);
   });
 
   /* ================= VERIFY OTP & GENERATE TOKEN ================= */
-  app.post(
-    "/verify",
-    { 
-      schema: { 
-        body: verifyCodeSchema, 
-        tags: ["Autenticação"],
-        description: "Valida o OTP e gera o token de acesso (JWT)" 
-      } 
-    },
-    async (req, reply) => {
-      try {
-        const user = await verifyCode(req.body.email, req.body.code);
-        const token = fastify.jwt.sign({
-          id: user.id,
-          role: user.role,
-          elderId: user.elderProfileId || undefined 
-        },
-        { expiresIn: "7d" }
-      );
+  app.post("/verify", { 
+    schema: { 
+      body: verifyCodeSchema, 
+      tags: ["Autenticação"],
+      description: "Valida o OTP e gera o token de acesso (JWT)" 
+    } 
+  }, async (req, reply) => {
+    const user = await verifyCode(req.body.email, req.body.code);
+    const token = fastify.jwt.sign({
+      id: user.id,
+      role: user.role,
+      elderId: user.elderProfileId || undefined 
+    }, { expiresIn: "7d" });
 
-        return reply.send({
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            elderId: user.elderProfileId // Retorno explícito para o estado do Front
-          },
-          token: token ?? undefined
-        });
-      } catch (err: any) {
-        if (err.message === "INVALID_CODE") {
-          return reply.status(400).send({ message: "Código inválido" });
-        }
-        if (err.message === "CODE_EXPIRED") {
-          return reply.status(400).send({ message: "Código expirado" });
-        }
-        throw err;
-      }
-    }
-  );
+    return reply.send({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        elderId: user.elderProfileId
+      },
+      token: token ?? undefined
+    });
+  });
 
   /* ================= RESEND OTP ================= */
   app.post("/resend-otp", { 
@@ -127,31 +91,33 @@ export default async function authRoutes(fastify: FastifyInstance) {
       body: resendOTPSchema, 
       tags: ["Autenticação"] 
     } 
-  }, async (req, reply) => {
-    try {
-      return await resendOTP(req.body.email, req.ip);
-    } catch (err: any) {
-      if (err.message === "RESEND_LIMIT_EXCEEDED") {
-        return reply.status(429).send({ message: "Limite de reenvio excedido" });
-      }
-      throw err;
-    }
+  }, async (req) => {
+    return await resendOTP(req.body.email, req.ip);
   });
 
   /* ================= DEBUG/ADMIN ROUTES ================= */
-  app.get("/all-users", { schema: { tags: ["Admin"] } }, async () => getAllUsers());
-  app.get("/all-elders", { schema: { tags: ["Admin"] } }, async () => getAllElders());
+  app.get("/all-users", { 
+    schema: { 
+      tags: ["Admin"],
+      response: { 200: z.array(z.any()) } // Zod fix
+    } 
+  }, async () => getAllUsers());
+
+  app.get("/all-elders", { 
+    schema: { 
+      tags: ["Admin"],
+      response: { 200: z.array(z.any()) } // Zod fix
+    } 
+  }, async () => getAllElders());
 
   app.patch("/update-name", {
     preHandler: [authenticate],
     schema: {
       tags: ["Perfil"],
-      body: {
-        type: 'object',
-        properties: { name: { type: 'string' } },
-        required: ['name']
-      },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
+      body: z.object({ // CORREÇÃO: Removido JSON manual por Zod
+        name: z.string().min(2)
+      })
     }
   }, async (req) => {
     return await putNameUser(req.user.id, (req.body as any).name);
@@ -161,8 +127,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
     preHandler: [authenticate],
     schema: {
       tags: ["Perfil"],
-      description: "Deleta a conta do usuário logado",
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
+      description: "Deleta a conta do usuário logado"
     }
   }, async (req) => {
     return await deletFamiliarAdim(req.user.id);

@@ -1,12 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { authenticate } from '../../hooks/authenticate.js';
-
-import {
-  registerCollaboratorSchema,
-  // ... outros schemas
-} from './collaborator.schemas.js';
-
+import { registerCollaboratorSchema } from './collaborator.schemas.js';
 import {
   registerCollaborator,
   getAllCollaborators,
@@ -17,49 +13,46 @@ import {
 export default async function collaboratorRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post(
-    '/register',
-    {
-      // Adicione o authenticate aqui para podermos pegar o req.user.id se precisar
-      preHandler: [authenticate], 
-      schema: {
-        security: [{ bearerAuth: [] }],
-        body: registerCollaboratorSchema,
-        tags: ['Collaborator']
-      }
-    },
-    async (req) => {
-      // O service agora cuida da lógica de créditos e vinculação
-      return registerCollaborator(req.body);
+  app.post('/register', {
+    preHandler: [authenticate], 
+    schema: {
+      security: [{ bearerAuth: [] }],
+      body: registerCollaboratorSchema,
+      tags: ['Collaborator']
     }
-  );
+  }, async (req) => {
+    return registerCollaborator(req.body);
+  });
 
-  app.get('/my-collaborators',
-    { preHandler: [authenticate] },
-    async (req) => {
-      return getCollaboratorsByChief(req.user.id);
+  app.get('/my-collaborators', { 
+    preHandler: [authenticate],
+    schema: {
+      tags: ['Collaborator'],
+      security: [{ bearerAuth: [] }],
+      response: { 200: z.array(z.any()) }
     }
-  );
+  }, async (req) => {
+    return getCollaboratorsByChief(req.user.id);
+  });
 
-  app.get('/get-all-collaborators', async () => getAllCollaborators());
+  app.get('/get-all-collaborators', {
+    schema: {
+      tags: ['Collaborator'],
+      response: { 200: z.array(z.any()) }
+    }
+  }, async () => getAllCollaborators());
 
-  app.delete('/delete-colaborador',{
-     preHandler: [authenticate], 
+  app.delete('/delete-colaborador', {
+    preHandler: [authenticate], 
     schema: {
       security: [{ bearerAuth: [] }],
       tags: ['Collaborator'],
-      params: { // Validando que o ID deve ser uma string (ObjectId)
-        type: 'object',
-        properties: {
-          id: { type: 'string' }
-        },
-        required: ['id']
-      }
+      params: z.object({ // CORREÇÃO: Zod no lugar de JSON manual
+        id: z.string()
+      })
     }
-  },
-  async(req)=>{
+  }, async (req) => {
     const { id } = req.params as { id: string };
     return deletCollaborator(id, req.user.id);
-  }
-  )
+  });
 }
