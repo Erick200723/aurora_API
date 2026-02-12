@@ -29,7 +29,8 @@ export async function registerFamiliar(data: {
         email: data.email,
         password: hash,
         role: "FAMILIAR",
-        status: "PENDING"
+        status: "PENDING",
+        elderProfileId: undefined
       }
     });
 
