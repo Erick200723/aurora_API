@@ -7,7 +7,8 @@ import {
   loginSchema,
   verifyCodeSchema,
   loginElderSchema,
-  resendOTPSchema
+  resendOTPSchema,
+  getMeResponseSchema 
 } from "./auth.schemas.js";
 
 import {
@@ -19,7 +20,8 @@ import {
   getAllUsers,
   getAllElders,
   putNameUser,
-  deletFamiliarAdim
+  deletFamiliarAdim,
+  getMe
 } from "./auth.service.js";
 
 export default async function authRoutes(fastify: FastifyInstance) {
@@ -132,5 +134,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   }, async (req) => {
     return await deletFamiliarAdim(req.user.id);
+  });
+
+    app.get("/me", {
+    preHandler: [authenticate],
+    schema: {
+      tags: ["Perfil"],
+      security: [{ bearerAuth: [] }],
+      description: "Retorna dados do usuário logado (incluindo créditos)",
+      response: {
+        200: getMeResponseSchema 
+      }
+    }
+  }, async (req) => {
+    return await getMe(req.user.id);
   });
 }

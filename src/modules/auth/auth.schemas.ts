@@ -30,3 +30,12 @@ export const registerCollaboratorSchema = z.object({
 export const resendOTPSchema = z.object({
   email: z.string().email().describe("Email do usuário"),
 });
+
+export const getMeResponseSchema = z.object({
+  id: z.string().describe("ID único do usuário"),
+  name: z.string().describe("Nome do usuário"),
+  email: z.string().email().describe("Email do usuário"),
+  role: z.string().describe("Papel do usuário no sistema"),
+  elderCredits: z.number().describe("Quantidade de slots para idosos disponíveis"),
+  collaboratorCredits: z.number().describe("Quantidade de créditos para familiares/colaboradores")
+});

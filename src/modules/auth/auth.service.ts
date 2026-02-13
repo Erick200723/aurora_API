@@ -246,3 +246,22 @@ export async function deletFamiliarAdim(id:string){
     console.error("erro ao deletar seu usuario"+err)
   }
 }
+export async function getMe(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      elderCredits: true,       
+      collaboratorCredits: true 
+    }
+  });
+
+  if (!user) {
+    throw new Error("Usuário não encontrado");
+  }
+
+  return user;
+}
