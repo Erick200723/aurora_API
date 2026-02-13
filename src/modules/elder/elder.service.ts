@@ -108,7 +108,7 @@ export async function deletElder(id: string, chiefId: string) {
   try {
     const elder = await prisma.elder.findFirst({
       where: { id, chiefId },
-      include: { userAccount: true } // Agora isso retorna um array []
+      include: { userAccount: true } 
     });
 
     if (!elder) {
@@ -120,10 +120,15 @@ export async function deletElder(id: string, chiefId: string) {
     }
 
     return await prisma.$transaction(async (tx) => {
-      // CORREÇÃO: Verifica se o array tem algum usuário e deleta o primeiro
-      if (elder.userAccount && elder.userAccount.length > 0) {
+      const accounts = elder.userAccount;
+
+      if (Array.isArray(accounts) && accounts.length > 0) {
         await tx.user.delete({
-          where: { id: elder.userAccount[0].id } // Acessa o ID do primeiro item do array
+          where: { id: (accounts[0] as any).id }
+        });
+      } else if (accounts && !(Array.isArray(accounts))) {
+        await tx.user.delete({
+          where: { id: (accounts as any).id }
         });
       }
 
