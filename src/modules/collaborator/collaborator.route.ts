@@ -13,8 +13,7 @@ import {
 export default async function collaboratorRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  app.post('/register', {
-    preHandler: [authenticate], 
+  app.post('/register', { 
     schema: {
       security: [{ bearerAuth: [] }],
       body: registerCollaboratorSchema,
@@ -35,7 +34,7 @@ export default async function collaboratorRoutes(fastify: FastifyInstance) {
     return getCollaboratorsByChief(req.user.id);
   });
 
-  app.get('/get-all-collaborators', {
+  app.get('/get-all-collaborators/id', {
     schema: {
       tags: ['Collaborator'],
       response: { 200: z.array(z.any()) }
