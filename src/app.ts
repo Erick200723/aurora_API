@@ -38,7 +38,7 @@ server.setSerializerCompiler(serializerCompiler);
 
 // Configuração para o Webhook do Stripe (Buffer)
 server.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
-  if (req.url === '/payment/webhook') {
+  if (req.url === '/stripe/webhook') { 
     done(null, body);
   } else {
     try {
@@ -47,7 +47,7 @@ server.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, bod
       done(e as Error);
     }
   }
-});
+});;
 
 // 1. Configuração de CORS (Alinhada com o Socket.io)
 const corsOptions = {

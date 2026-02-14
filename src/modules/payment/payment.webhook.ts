@@ -3,9 +3,8 @@ import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
+  apiVersion: '2025-12-15.clover' as any,
 });
 
 export async function stripeWebhook(app: FastifyInstance) {
@@ -20,50 +19,44 @@ export async function stripeWebhook(app: FastifyInstance) {
 
     try {
       event = stripe.webhooks.constructEvent(
-        request.body as Buffer,
+        request.body as Buffer, 
         signature,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
     } catch (err: any) {
       console.error(`Webhook Error: ${err.message}`);
-      return reply.status(400).send({
-        error: `Webhook Error: ${err.message}`,
-      });
+      return reply.status(400).send({ error: `Webhook Error: ${err.message}` });
     }
 
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        
-        const userId = session.metadata?.userId;
-        const type = session.metadata?.type; 
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const userId = session.metadata?.userId;
+      const type = session.metadata?.type;
 
-        if (userId && type) {
-          await prisma.payment.update({
-            where: { stripeSessionId: session.id },
-            data: { status: 'COMPLETED' },
-          });
+      if (userId && type) {
+        const payment = await prisma.payment.findUnique({
+          where: { stripeSessionId: session.id }
+        });
 
-          if (type === 'ELDER_EXTRA') {
-            await prisma.user.update({
+        if (payment && payment.status !== 'COMPLETED') {
+          await prisma.$transaction([
+            prisma.payment.update({
+              where: { stripeSessionId: session.id },
+              data: { status: 'COMPLETED' },
+            }),
+            prisma.user.update({
               where: { id: userId },
-              data: { elderCredits: { increment: 1 } },
-            });
-            console.log(`Crédito de IDOSO adicionado para user ${userId}`);
-          } 
-          else if (type === 'COLLABORATOR') {
-            await prisma.user.update({
-              where: { id: userId },
-              data: { collaboratorCredits: { increment: 1 } },
-            });
-            console.log(`Crédito de COLABORADOR adicionado para user ${userId}`);
-          }
+              data: {
+                [type === 'ELDER_EXTRA' ? 'elderCredits' : 'collaboratorCredits']: {
+                  increment: 1
+                }
+              }
+            })
+          ]);
+          
+          console.log(`Sucesso: Crédito de ${type} adicionado ao usuário ${userId}`);
         }
-        break;
       }
-
-      default:
-        console.log(`Evento ignorado: ${event.type}`);
     }
 
     return reply.status(200).send({ received: true });
