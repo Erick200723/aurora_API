@@ -20,15 +20,26 @@ export default async function paymentRoutes(fastify: FastifyInstance) {
           response: {
             200: z.object({
               checkoutUrl: z.string()
+            }),
+            500: z.object({
+              message: z.string()
             })
           }
         }
       },
-      async (request) => {
+      async (request,reply) => {
         const { type } = request.body as { type: PaymentType };
         const userId = (request.user as { id: string }).id;
 
-        return await createCheckoutSession(userId, type);
+        const result = await createCheckoutSession(userId, type);
+
+        if(!result.checkoutUrl){
+          return reply.status(500).send({
+            message: "Não foi possivel gerar URL de Pagamento."
+          });
+        }
+
+        return {checkoutUrl: result.checkoutUrl}
       }
   );
 }

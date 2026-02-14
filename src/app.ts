@@ -26,6 +26,7 @@ import remiderRoutes from './modules/reminder/reminder.routes.js';
 import emergencyRoutes from './modules/emergency/emergency.route.js'; // Nova rota
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
 import { dailyResetReminders } from './modules/reminder/reminder.service.js';
+import { string } from 'zod';
 
 const server = fastify({
   logger: true,
@@ -36,17 +37,17 @@ server.setValidatorCompiler(validatorCompiler);
 server.setSerializerCompiler(serializerCompiler);
 
 // Configuração para o Webhook do Stripe (Buffer)
-server.addContentTypeParser(
-  'application/json',
-  { parseAs: 'buffer' },
-  (req, body, done) => {
-    if (req.url.startsWith('/stripe/webhook')) {
-      done(null, body);
-    } else {
+server.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+  if (req.url === '/payment/webhook') {
+    done(null, body);
+  } else {
+    try {
       done(null, JSON.parse(body.toString()));
+    } catch (e) {
+      done(e as Error);
     }
   }
-);
+});
 
 // 1. Configuração de CORS (Alinhada com o Socket.io)
 const corsOptions = {

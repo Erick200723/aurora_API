@@ -18,19 +18,22 @@ export async function createCheckoutSession(
     userId: string,
     type: PaymentType
 ){
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true }
+    });
+
+    if (!user) {
+        throw { code: "USER_NOT_FOUND", message: "Usuário não encontrado", status_code: 404 };
+    }
+
     const amount = PRICE[type];
 
-    if(!amount){
-        throw{
-            code: "INVALID_PAYMENT_TYPE",
-            message: "Invalid payment type",
-            status_code: 400
-        };
-    }
 
     const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
+        customer_email: user.email, 
         line_items:[{
             price_data: {
                 currency: 'brl',
@@ -43,33 +46,21 @@ export async function createCheckoutSession(
             },
             quantity: 1
         }],
-        success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
+        success_url: `${process.env.FRONTEND_URL}/admin/painel?success=true`, 
+        cancel_url: `${process.env.FRONTEND_URL}/admin/painel?cancel=false`,
         metadata:{
             userId, 
             type 
         }
     });
 
-    await prisma.payment.create({
-        data:{
-            userId,
-            type,
-            amount,
-            stripeSessionId: session.id,
-            status: 'PENDING'
-        }
-    });
-
     if(!session.url){
-        throw{
-            code: "SESSION_URL_NOT_FOUND",
-            message: "Checkout session URL not found",
-            status_code: 500
-        };
+        throw new Error("Stripe session URL is null")
     }
 
-   return {
-    checkoutUrl: session.url
-   }
+
+
+    return { 
+        checkoutUrl: session.url 
+    }
 }
