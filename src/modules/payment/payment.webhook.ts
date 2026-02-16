@@ -3,62 +3,98 @@ import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover' as any,
+  apiVersion: '2025-12-15.clover' as any, 
 });
 
 export async function stripeWebhook(app: FastifyInstance) {
-  app.post('/webhook', async (request, reply) => {
-    const signature = request.headers['stripe-signature'];
+  app.post('/webhook', 
+    {
+      config: {
+        rawBody: true, 
+      }
+    },
+    async (request, reply) => {
+      const signature = request.headers['stripe-signature'];
 
-    if (!signature) {
-      return reply.status(400).send({ error: 'Missing signature' });
-    }
+      const rawBody = (request as any).rawBody;
 
-    let event: Stripe.Event;
+      if (!signature || !rawBody) {
+        console.error("Erro: Assinatura ou RawBody ausente.");
+        return reply.status(400).send({ error: 'Missing signature or body' });
+      }
 
-    try {
-      event = stripe.webhooks.constructEvent(
-        request.body as Buffer, 
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
-    } catch (err: any) {
-      console.error(`Webhook Error: ${err.message}`);
-      return reply.status(400).send({ error: `Webhook Error: ${err.message}` });
-    }
+      let event: Stripe.Event;
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.userId;
-      const type = session.metadata?.type;
+      try {
+        event = stripe.webhooks.constructEvent(
+          rawBody, 
+          signature,
+          process.env.STRIPE_WEBHOOK_SECRET!
+        );
+      } catch (err: any) {
+        console.error(`❌ Webhook Signature Error: ${err.message}`);
+        return reply.status(400).send({ error: `Webhook Error: ${err.message}` });
+      }
 
-      if (userId && type) {
-        const payment = await prisma.payment.findUnique({
-          where: { stripeSessionId: session.id }
-        });
+      console.log(`🔔 Evento recebido: ${event.type}`);
 
-        if (payment && payment.status !== 'COMPLETED') {
-          await prisma.$transaction([
-            prisma.payment.update({
-              where: { stripeSessionId: session.id },
-              data: { status: 'COMPLETED' },
-            }),
-            prisma.user.update({
-              where: { id: userId },
-              data: {
-                [type === 'ELDER_EXTRA' ? 'elderCredits' : 'collaboratorCredits']: {
-                  increment: 1
-                }
-              }
-            })
-          ]);
-          
-          console.log(`Sucesso: Crédito de ${type} adicionado ao usuário ${userId}`);
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        const userId = session.metadata?.userId;
+        const type = session.metadata?.type; 
+        const stripeSessionId = session.id;
+
+        console.log(`Processando pagamento para User: ${userId}, Type: ${type}, Session: ${stripeSessionId}`);
+
+        if (userId && type) {
+          try {
+            const existingPayment = await prisma.payment.findUnique({
+              where: { stripeSessionId: stripeSessionId }
+            });
+
+            if (existingPayment?.status === 'COMPLETED') {
+              console.log('Pagamento já processado anteriormente.');
+              return reply.status(200).send({ received: true });
+            }
+
+            await prisma.$transaction(async (tx) => {
+               await tx.payment.upsert({
+                 where: { stripeSessionId: stripeSessionId },
+                 create: {
+                   userId,
+                   stripeSessionId,
+                   amount: session.amount_total ? session.amount_total / 100 : 30,
+                   status: 'COMPLETED',
+                   type: type as any 
+                 },
+                 update: {
+                   status: 'COMPLETED'
+                 }
+               });
+               const fieldToIncrement = type === 'ELDER_EXTRA' ? 'elderCredits' : 'collaboratorCredits';
+               
+               await tx.user.update({
+                 where: { id: userId },
+                 data: {
+                   [fieldToIncrement]: { increment: 1 }
+                 }
+               });
+            });
+
+            console.log(`✅ Sucesso: Créditos atualizados para o usuário ${userId}`);
+          } catch (dbError) {
+            console.error("❌ Erro ao salvar no banco:", dbError);
+            return reply.status(500).send({ error: 'Database transaction failed' });
+          }
+        } else {
+            console.error("❌ Erro: Metadata (userId ou type) faltando no evento do Stripe.");
         }
       }
-    }
 
-    return reply.status(200).send({ received: true });
-  });
+      return reply.status(200).send({ received: true });
+    }
+  );
 }

@@ -26,7 +26,7 @@ import remiderRoutes from './modules/reminder/reminder.routes.js';
 import emergencyRoutes from './modules/emergency/emergency.route.js'; // Nova rota
 import { stripeWebhook } from './modules/payment/payment.webhook.js';
 import { dailyResetReminders } from './modules/reminder/reminder.service.js';
-import { string } from 'zod';
+import fastifyRawBody from 'fastify-raw-body';
 
 const server = fastify({
   logger: true,
@@ -59,6 +59,13 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 };
+
+await server.register(fastifyRawBody,{
+  field: "rawBody",
+  global: false,
+  encoding: false,
+  runFirst: true
+})
 
 await server.register(cors, corsOptions);
 
