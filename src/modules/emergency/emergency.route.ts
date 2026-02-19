@@ -18,16 +18,26 @@ export default async function emergencyRoutes(app: FastifyInstance) {
 
       try {
         const result = await createEmergencyAlert(elderId);
-        
-        app.io.to(result.chiefId).emit('emergency_received', {
+
+        const emergencyPayload = {
           id: result.alert.id,
           elderName: result.elderName,
           message: `🚨 EMERGÊNCIA: ${result.elderName} precisa de ajuda!`,
           timestamp: new Date()
+        };
+
+        result.targetIds.forEach(id => {
+          app.io.to(id).emit('emergency_received', emergencyPayload);
+          console.log(`📡 Alerta enviado para a sala: ${id}`);
         });
 
-        return { message: "Alerta de emergência disparado!", alertId: result.alert.id };
+        return { 
+          message: "Alerta de emergência disparado!", 
+          alertId: result.alert.id 
+        };
+
       } catch (error) {
+        console.error("Erro ao disparar emergência:", error);
         return reply.status(500).send({ message: "Erro ao disparar emergência" });
       }
     }
