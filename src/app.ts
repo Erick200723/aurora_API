@@ -125,7 +125,7 @@ await server.register(elderRoutes, { prefix: '/elders' });
 await server.register(paymentRoutes, { prefix: '/payment' });
 await server.register(stripeWebhook, { prefix: '/stripe' });
 await server.register(remiderRoutes, { prefix: '/reminders' });
-await server.register(emergencyRoutes, { prefix: '/emergencies' }); // Registrada!
+await server.register(emergencyRoutes, { prefix: '/emergencies' });
 
 const PORT = Number(process.env.PORT) || 4000;
 

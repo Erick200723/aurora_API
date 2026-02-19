@@ -61,32 +61,35 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   /* ================= VERIFY OTP & GENERATE TOKEN ================= */
-  app.post("/verify", { 
-    schema: { 
-      body: verifyCodeSchema, 
-      tags: ["Autenticação"],
-      description: "Valida o OTP e gera o token de acesso (JWT)" 
-    } 
-  }, async (req, reply) => {
-    const user = await verifyCode(req.body.email, req.body.code);
-    const token = fastify.jwt.sign({
-      id: user.id,
-      role: user.role,
-      elderId: user.elderProfileId || undefined 
-    }, { expiresIn: "7d" });
+    app.post("/verify", { 
+      schema: { 
+        body: verifyCodeSchema, // <-- Isso aqui é o que "ensina" o TS o que tem no req.body
+        tags: ["Autenticação"],
+        description: "Valida o OTP e gera o token de acesso (JWT)" 
+      } 
+    }, async (req, reply) => {
+      // Agora o TS sabe que req.body tem email e code
+      const { email, code } = req.body; 
+      const user = await verifyCode(email, code);
 
-    return reply.send({
-      user: {
+      // Gerando o token com o nome unificado
+      const token = fastify.jwt.sign({
         id: user.id,
-        name: user.name,
-        email: user.email,
         role: user.role,
-        elderId: user.elderProfileId
-      },
-      token: token ?? undefined
-    });
-  });
+        elderProfileId: user.elderProfileId || undefined 
+      }, { expiresIn: "7d" });
 
+      return reply.send({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          elderProfileId: user.elderProfileId
+        },
+        token: token ?? undefined
+      });
+    });
   /* ================= RESEND OTP ================= */
   app.post("/resend-otp", { 
     schema: { 

@@ -151,6 +151,13 @@ export async function verifyCode(email: string, code: string) {
   return prisma.user.update({
     where: { email },
     data: { status: "ACTIVE" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      elderProfileId: true // <-- Adicione isso se o TS reclamar
+    }
   });
 }
 
