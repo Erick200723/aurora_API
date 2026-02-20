@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { StringFormatParams } from 'zod/v4/core';
 const prisma = new PrismaClient();
 
 export async function createEmergencyAlert(elderId: string) {
@@ -32,4 +33,26 @@ export async function createEmergencyAlert(elderId: string) {
     targetIds, // Retorne o array de IDs
     elderName: elder.name
   };
+}
+
+export async function getEmergenciesForUser(userId:string,role:string){
+  return await prisma.emergency.findMany({
+    where: {
+      OR:[{chiefId:userId},{elder:{collaborators: {some:{userId}}}}]
+    },
+    include: {
+      elder:{select:{name:true}}
+    },
+    orderBy: { id: 'desc' }
+  })
+}
+
+export async function resolveEmergencyAlert(alertId:string, ){
+  return await prisma.emergency.update({
+    where: {id:alertId},
+    data:{
+      resolved: true,
+      at: new Date()
+    }
+  })
 }

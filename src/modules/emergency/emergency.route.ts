@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../../hooks/authenticate.js';
-import { createEmergencyAlert } from './emergency.service.js';
+import { createEmergencyAlert,getEmergenciesForUser,resolveEmergencyAlert } from './emergency.service.js';
 
 export default async function emergencyRoutes(app: FastifyInstance) {
   
@@ -39,6 +39,32 @@ export default async function emergencyRoutes(app: FastifyInstance) {
       } catch (error) {
         console.error("Erro ao disparar emergência:", error);
         return reply.status(500).send({ message: "Erro ao disparar emergência" });
+      }
+    }
+  );
+  app.get(
+    '/',
+    { preHandler: [authenticate] },
+    async (req, reply) => {
+      const userId = req.user.id;
+      const role = req.user.role; 
+      
+      const emergencies = await getEmergenciesForUser(userId, role);
+      return emergencies;
+    }
+  );
+  app.patch(
+    '/:id/resolve',
+    { preHandler: [authenticate] },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const { observation } = req.body as { observation: string };
+
+      try {
+        await resolveEmergencyAlert(id);
+        return { message: "Emergência marcada como resolvida no banco!" };
+      } catch (error) {
+        return reply.status(500).send({ message: "Erro ao resolver" });
       }
     }
   );
