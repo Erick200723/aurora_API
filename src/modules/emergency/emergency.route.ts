@@ -58,11 +58,17 @@ export default async function emergencyRoutes(app: FastifyInstance) {
     { preHandler: [authenticate] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
+      
+      // Correção do erro: extrai com segurança, mesmo se o body vier vazio
+      const body = (req.body as { observation?: string }) || {};
+      const { observation } = body;
+
       try {
-        await resolveEmergencyAlert(id);
+        await resolveEmergencyAlert(id, observation);
         return { message: "Emergência marcada como resolvida no banco!" };
       } catch (error) {
-        return reply.status(500).send({ message: "Erro ao resolver" });
+        console.error("Erro ao resolver:", error);
+        return reply.status(500).send({ message: "Erro interno ao resolver emergência." });
       }
     }
   );

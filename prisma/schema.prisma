@@ -89,15 +89,16 @@ model Reminder {
 }
 
 model Emergency {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  elderId   String   @db.ObjectId
-  chiefId   String   @db.ObjectId
-  elder     Elder    @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  at        DateTime @default(now())
-  location  String?
-  resolved  Boolean  @default(false)
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  elderId     String   @db.ObjectId
+  chiefId     String   @db.ObjectId
+  elder       Elder    @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  at          DateTime @default(now())
+  location    String?
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  observation String?
 }
-
 model Audio {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   elderId     String   @db.ObjectId

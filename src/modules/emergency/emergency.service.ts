@@ -47,11 +47,13 @@ export async function getEmergenciesForUser(userId:string,role:string){
   })
 }
 
-export async function resolveEmergencyAlert(alertId:string, ){
+export async function resolveEmergencyAlert(alertId: string, observation?: string) {
   return await prisma.emergency.update({
-    where: {id:alertId},
-    data:{
-      resolved: true
+    where: { id: alertId },
+    data: {
+      resolved: true,
+      resolvedAt: new Date(),
+      observation: observation || null 
     }
   })
 }

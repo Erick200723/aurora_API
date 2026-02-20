@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 
 // REMOVIDO: apiVersion '.clover' (Isso pode causar erro se a lib não suportar)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia' as any, // Use a versão mais recente estável ou remova essa linha
+  apiVersion: '2025-01-27.acacia' as any, 
 });
 
 export async function stripeWebhook(app: FastifyInstance) {
   app.post('/webhook', 
     {
       config: {
-        rawBody: true, // Garante que o plugin fastify-raw-body atue aqui
+        rawBody: true, 
       }
     },
     async (request, reply) => {
