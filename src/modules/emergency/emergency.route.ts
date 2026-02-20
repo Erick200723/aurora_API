@@ -58,8 +58,6 @@ export default async function emergencyRoutes(app: FastifyInstance) {
     { preHandler: [authenticate] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
-      const { observation } = req.body as { observation: string };
-
       try {
         await resolveEmergencyAlert(id);
         return { message: "Emergência marcada como resolvida no banco!" };

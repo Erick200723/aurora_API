@@ -51,8 +51,7 @@ export async function resolveEmergencyAlert(alertId:string, ){
   return await prisma.emergency.update({
     where: {id:alertId},
     data:{
-      resolved: true,
-      at: new Date()
+      resolved: true
     }
   })
 }
