@@ -7,7 +7,7 @@ export async function sendOTPEmail(email: string, code: string) {
     await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
-        sender: { name: "Aurora IA", email: "maressaaraujo7@gmail.com" },
+        sender: { name: "Aurora IA", email: "auroraai.marketing.co@gmail.com" },
         to: [{ email: email }],
         subject: "Seu código de verificação - Aurora",
         htmlContent: `
