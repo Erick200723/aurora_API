@@ -5,7 +5,7 @@ import CreateElderInput from '../../interfaces/elder.interface.js';
 const prisma = new PrismaClient();
 
 export async function CreateElder(data: CreateElderInput) {
-  // 1️⃣ Verifica CPF duplicado
+
   const exists = await prisma.elder.findUnique({
     where: { cpf: data.cpf }
   });
@@ -14,10 +14,8 @@ export async function CreateElder(data: CreateElderInput) {
     throw new Error('Elder with this CPF already exists');
   }
 
-  // 2️⃣ Início da Transaction para controle de créditos
   return await prisma.$transaction(async (tx) => {
     
-    // Busca o chefe e a contagem de idosos atuais
     const elderCount = await tx.elder.count({
       where: { chiefId: data.chiefId }
     });
@@ -28,7 +26,6 @@ export async function CreateElder(data: CreateElderInput) {
 
     if (!chief) throw new Error("Responsável não encontrado");
 
-    // LÓGICA DE CRÉDITOS: Se já tem 1 idoso, precisa de crédito para o próximo
     if (elderCount >= 1) {
       if (chief.elderCredits <= 0) {
         throw {
@@ -37,31 +34,30 @@ export async function CreateElder(data: CreateElderInput) {
           status_code: 402
         };
       }
-
-      // Consome 1 crédito
       await tx.user.update({
         where: { id: data.chiefId },
         data: { elderCredits: { decrement: 1 } }
       });
     }
 
-    // 3️⃣ Criamos o Elder
     const elder = await tx.elder.create({
       data: {
         name: data.name,
         cpf: data.cpf,
         age: data.age,
-        emergencyContact: data.emergencyContact,
+        phone: data.phone,
+        address: data.address,
+        emergencyContact: data.emergencyContact || "",
         chiefId: data.chiefId,
+        bloodType: data.bloodType,
+        allergies: data.allergies ?? [],
         medicalConditions: data.medicalConditions ?? [],
         medications: data.medications ?? [],
-        ...(data.birthData && !isNaN(Date.parse(data.birthData)) && {
-          birthData: new Date(data.birthData)
-        })
+        observations: data.observations,
+        ...(data.birthData && { birthData: new Date(data.birthData) })
       }
     });
 
-    // 4️⃣ Criação de login para o idoso (se solicitado)
     if (data.createLogin) {
       if (!data.email || !data.password) {
         throw {
@@ -89,7 +85,6 @@ export async function CreateElder(data: CreateElderInput) {
   });
 }
 
-// getEldersByChief permanece igual, mudando apenas para usar o prisma global se não estiver em transaction
 export async function getEldersByChief(chiefId: string) {
   try {
     return await prisma.elder.findMany({
@@ -146,4 +141,19 @@ export async function deletElder(id: string, chiefId: string) {
       status_code: 500
     };
   }
+}
+export async function UpdateElder(id:string,chiefId:string,updateData:any){
+  const elder = await prisma.elder.findFirst({
+    where:{id,chiefId}
+  })
+
+  if(!elder) throw new Error("Idoso não encontrado ou sempermissão")
+
+  return await prisma.elder.update({
+    where:{id},
+    data:{
+      ...updateData,
+      ...(updateData.birthData && { birthData: new Date(updateData.birthData) })
+    }
+  })
 }

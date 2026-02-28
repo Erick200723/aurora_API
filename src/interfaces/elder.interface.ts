@@ -10,4 +10,10 @@ export default interface CreateElderInput{
   email?: string;
   password?: string;
   chiefId: string;
+  bloodType: string;
+  allergies: string[];
+  phone: string;
+  observations: string;
+  address: string
+
 }

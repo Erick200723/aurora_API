@@ -31,21 +31,24 @@ model User {
 }
 // Idosos cadastrados no sistema
 model Elder {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  cpf              String   @unique
-  name             String
-  age              Int
-  birthData        DateTime?
-  emergencyContact String
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  cpf               String   @unique
+  name              String
+  age               Int
+  birthData         DateTime?
+  phone             String?   
+  address           String?   
+  bloodType         String?   
+  emergencyContact  String?   
+  allergies         String[]  
   medicalConditions String[]
-  medications      String[]
-  createdAt        DateTime @default(now())
+  medications       String[]
+  observations      String?   
+  createdAt         DateTime @default(now())
 
-  // Dono do cadastro (Familiar/Admin que cadastrou)
   chiefId String @db.ObjectId
   chief   User   @relation("ChiefElders", fields: [chiefId], references: [id])
 
-  // RELAÇÃO REVERSA: O usuário que "é" este idoso
   userAccount User[] @relation("UserToElder")
 
   collaborators Collaborator[]
