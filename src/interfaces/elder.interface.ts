@@ -2,7 +2,7 @@ export default interface CreateElderInput{
   name: string;
   cpf: string;
   age: number;
-  emergencyContact: string;
+  emergencyContact?: string;
   birthData?: string;
   medicalConditions?: string[];
   medications?: string[];
@@ -10,10 +10,10 @@ export default interface CreateElderInput{
   email?: string;
   password?: string;
   chiefId: string;
-  bloodType: string;
-  allergies: string[];
-  phone: string;
-  observations: string;
-  address: string
+  bloodType?: string;
+  allergies?: string[];
+  phone?: string;
+  observations?: string;
+  address?: string
 
 }

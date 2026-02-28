@@ -44,9 +44,9 @@ export default async function emergencyRoutes(app: FastifyInstance) {
   );
   app.get(
     '/',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate] , schema:{tags:["Emegencia"]} },
     async (req, reply) => {
-      const userId = req.user.id;
+      const userId = req.user.id 
       const role = req.user.role; 
       
       const emergencies = await getEmergenciesForUser(userId, role);
@@ -57,7 +57,7 @@ export default async function emergencyRoutes(app: FastifyInstance) {
     '/:id/resolve',
     { preHandler: [authenticate] },
     async (req, reply) => {
-      const { id } = req.params as { id: string };
+      const { id } = req.params as { id: string ,tags: ['Emegencia']};
       
       // Correção do erro: extrai com segurança, mesmo se o body vier vazio
       const body = (req.body as { observation?: string }) || {};
