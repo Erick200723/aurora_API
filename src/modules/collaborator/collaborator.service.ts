@@ -134,34 +134,32 @@ export async function getAllCollaborators() {
 
 export async function deletCollaborator(id: string, chiefId: string) {
   try {
-    // 1. Localiza o colaborador garantindo que ele pertence ao Chief logado
     const collab = await prisma.collaborator.findFirst({
-      where: { 
-        id: id,
-        chiefId: chiefId 
-      }
+      where: { id: id, chiefId: chiefId },
+      include: { user: true } 
     });
 
     if (!collab) {
-      throw { 
-        code: "COLLABORATOR_NOT_FOUND", 
-        message: "Colaborador não encontrado ou você não tem permissão para removê-lo.", 
-        status_code: 404 
-      };
+      throw { code: "COLLABORATOR_NOT_FOUND", message: "Não encontrado", status_code: 404 };
     }
+
     return await prisma.$transaction(async (tx) => {
+      // REGISTRA O LOG ANTES DE DELETAR O USUÁRIO
+      await tx.activity.create({
+        data: {
+          usuario: "Sistema",
+          acao: `Removeu o acesso do colaborador: ${collab.user.name}`,
+          tipo: 'admin',
+          vinculoId: chiefId
+        }
+      });
+
       await tx.collaborator.delete({ where: { id } });
-      
       await tx.user.delete({ where: { id: collab.userId } });
 
       return { message: "Colaborador removido com sucesso" };
     });
   } catch (error: any) {
-    if (error.status_code) throw error;
-    throw {
-      code: "DELETE_FAILED",
-      message: "Erro interno ao remover colaborador",
-      status_code: 500
-    };
+    console.error(error)
   }
 }

@@ -8,7 +8,7 @@ export async function createReminder(data: {
   type: string;
   daysOfWeek: number[];
   elderId: string;
-}, userName: string, chiefId: string) { // Adicionamos quem criou e o ID do Admin
+}, userName: string, chiefId: string) { 
   const reminder = await prisma.reminder.create({
     data: {
       title: data.title,
@@ -22,13 +22,13 @@ export async function createReminder(data: {
 
   await createLog({
     usuario: userName,
-    acao: `Criou o lembrete: "${data.title}" para as ${data.time}`,
-    tipo: 'admin',
-    vinculoId: chiefId
+    acao: `Adicionou o lembrete: "${data.title}"`,
+    tipo: 'atividade', 
+    vinculoId: chiefId 
   });
 
   return reminder;
-  }
+}
 /**
  * BUSCA OS LEMBRETES DO DIA (Máximo 3, como você pediu)
  */

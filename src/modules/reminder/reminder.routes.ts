@@ -16,7 +16,9 @@ export default async function remiderRoutes(fastify: FastifyInstance) {
         schema: { tags: ["Lembretes"], security: [{ bearerAuth: [] }] }
     }, async (req: any, reply) => {
         try {
-            return await createReminder(req.body, req.user.name, req.user.id);
+            const chiefId = req.user.role === 'COLLABORATOR' ? req.user.chiefId : req.user.id;
+            
+            return await createReminder(req.body, req.user.name, chiefId);
         } catch (err: any) {
             return reply.status(400).send({ message: "Dados inválidos!" });
         }

@@ -41,7 +41,7 @@ export default async function collaboratorRoutes(fastify: FastifyInstance) {
     }
   }, async () => getAllCollaborators());
 
-  app.delete('/delete-colaborador', {
+  app.delete('/delete-colaborador/:id', {
     preHandler: [authenticate], 
     schema: {
       security: [{ bearerAuth: [] }],
