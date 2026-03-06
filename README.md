@@ -96,7 +96,7 @@ Mais do que entregar um sistema “finalizado”, meu foco está em **entender o
 O Aurora API ainda está em desenvolvimento, mas já reflete minha preocupação com organização, boas práticas e aprendizado real — exatamente o que busco levar para minha primeira oportunidade profissional como **desenvolvedor júnior**.
 
 <p align="center">
-  <b>✨ Em constante aprendizado. Em constante evolução. ✨</b>
+  <b>✨ Em constante aprendizado. Em constante evolução! ✨</b>
 </p>
 
 <p align="center">
