@@ -1,26 +1,34 @@
 import {PrismaClient } from '@prisma/client';
-
+import { createLog } from '../atividades/atividades.service.js';
 const prisma = new PrismaClient();
 
 export async function createReminder(data: {
   title: string;
   time: string;
   type: string;
-  daysOfWeek: number[]; // Ex: [1, 3, 5] para Seg, Qua, Sex
+  daysOfWeek: number[];
   elderId: string;
-}) {
-  return prisma.reminder.create({
+}, userName: string, chiefId: string) { // Adicionamos quem criou e o ID do Admin
+  const reminder = await prisma.reminder.create({
     data: {
       title: data.title,
       time: data.time,
       type: data.type,
-      daysOfWeek:data.daysOfWeek,
+      daysOfWeek: data.daysOfWeek,
       elderId: data.elderId,
       isCompleted: false,
     }
   });
-}
 
+  await createLog({
+    usuario: userName,
+    acao: `Criou o lembrete: "${data.title}" para as ${data.time}`,
+    tipo: 'admin',
+    vinculoId: chiefId
+  });
+
+  return reminder;
+  }
 /**
  * BUSCA OS LEMBRETES DO DIA (Máximo 3, como você pediu)
  */
@@ -51,14 +59,24 @@ export async function getDailyReminders(elderId: string) {
  * Essencial para a sua lógica de "limpeza" e reciclagem
  */
 export async function markReminderAsDone(reminderId: string) {
-  return prisma.reminder.update({
+  const reminder = await prisma.reminder.update({
     where: { id: reminderId },
+    include: { elder: true }, 
     data: { 
       isCompleted: true,
       lastDone: new Date() 
     }
   });
-}
+
+  await createLog({
+      usuario: reminder.elder.name,
+      acao: `Concluiu o lembrete: "${reminder.title}"`,
+      tipo: 'idoso',
+      vinculoId: reminder.elder.chiefId
+    });
+
+    return reminder;
+  }
 
 export async function dailyResetReminders() {
   const hoje = new Date();
@@ -89,30 +107,34 @@ export async function dailyResetReminders() {
  * ATUALIZAR UM LEMBRETE
  * Permite editar o título, horário ou o tipo
  */
-export async function updateReminder(id: string, data: {
-  title?: string;
-  time?: string;
-  type?: string;
-  daysOfWeek?: number[];
-}) {
-  return prisma.reminder.update({
+export async function updateReminder(id: string, data: any, userName: string, chiefId: string) {
+  const updated = await prisma.reminder.update({
     where: { id: id },
-    data: {
-      title: data.title,
-      time: data.time,
-      type: data.type,
-      daysOfWeek: data.daysOfWeek,
-      // Ao editar, garantimos que ele volte a ficar pendente
-      isCompleted: false, 
-    },
+    data: { ...data, isCompleted: false },
   });
+
+  await createLog({
+    usuario: userName,
+    acao: `Editou o lembrete: "${updated.title}"`,
+    tipo: 'admin',
+    vinculoId: chiefId
+  });
+
+  return updated;
 }
 
 /**
  * EXCLUIR UM LEMBRETE
  */
-export async function deleteReminder(id: string) {
-  return prisma.reminder.delete({
+export async function deleteReminder(id: string, userName: string, chiefId: string) {
+  const deleted = await prisma.reminder.delete({
     where: { id: id },
+  });
+
+  await createLog({
+    usuario: userName,
+    acao: `Excluiu o lembrete: "${deleted.title}"`,
+    tipo: 'admin',
+    vinculoId: chiefId
   });
 }

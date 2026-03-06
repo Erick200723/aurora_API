@@ -15,5 +15,6 @@ export default interface CreateElderInput{
   phone?: string;
   observations?: string;
   address?: string
+  typePlanetLife?: string;
 
 }

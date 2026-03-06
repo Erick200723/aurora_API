@@ -7,17 +7,18 @@ import {
     updateReminder,
     deleteReminder
 } from './reminder.service.js'
+import { authenticate } from '../../hooks/authenticate.js';
 
 export default async function remiderRoutes(fastify: FastifyInstance) {
     
-    // Criar Lembrete
     fastify.post("/crete_remiders", {
-        schema: { tags: ["Lembretes"] }
-    }, async (req: FastifyRequest<{ Body: reminder }>, reply) => {
+        preHandler: [authenticate],
+        schema: { tags: ["Lembretes"], security: [{ bearerAuth: [] }] }
+    }, async (req: any, reply) => {
         try {
-            return await createReminder(req.body)
+            return await createReminder(req.body, req.user.name, req.user.id);
         } catch (err: any) {
-            return reply.status(400).send({ message: "Dados para lembrete inválidos!" });
+            return reply.status(400).send({ message: "Dados inválidos!" });
         }
     })
 
@@ -35,45 +36,29 @@ export default async function remiderRoutes(fastify: FastifyInstance) {
         }
     })
 
-    // Rota para Atualizar Lembrete (Corrigido .json() para .send() e tipagem do Body)
     fastify.put('/update-reminder/:id', {
-        schema: { tags: ["Lembretes"] }
-    }, async (req: FastifyRequest<{ 
-        Params: { id: string }, 
-        Body: Partial<reminder> // Aqui tipamos o corpo para o TS aceitar no service
-    }>, reply) => {
-        try {
-            const { id } = req.params;
-            const updated = await updateReminder(id, req.body);
-            return reply.status(200).send(updated);
-        } catch (error) {
-            return reply.status(500).send({ error: "Erro ao atualizar lembrete" });
-        }
+        preHandler: [authenticate],
+        schema: { tags: ["Lembretes"], security: [{ bearerAuth: [] }] }
+    }, async (req: any, reply) => {
+        const { id } = req.params;
+        const updated = await updateReminder(id, req.body, req.user.name, req.user.id);
+        return reply.status(200).send(updated);
     });
 
-    // Rota para Deletar Lembrete (Corrigido .json() para .send())
     fastify.delete('/delete-reminder/:id', {
-        schema: { tags: ["Lembretes"] }
-    }, async (req: FastifyRequest<{ Params: { id: string } }>, reply) => {
-        try {
-            const { id } = req.params;
-            await deleteReminder(id);
-            return reply.status(204).send(); 
-        } catch (error) {
-            return reply.status(500).send({ error: "Erro ao excluir lembrete" });
-        }
+        preHandler: [authenticate],
+        schema: { tags: ["Lembretes"], security: [{ bearerAuth: [] }] }
+    }, async (req: any, reply) => {
+        const { id } = req.params;
+        await deleteReminder(id, req.user.name, req.user.id);
+        return reply.status(204).send(); 
     });
 
-    // Rota para Concluir Lembrete (Removida a duplicada e corrigido .send())
     fastify.patch('/complete-reminder/:id', {
         schema: { tags: ["Lembretes"] }
-    }, async (req: FastifyRequest<{ Params: { id: string } }>, reply) => {
-        try {
-            const { id } = req.params;
-            const completed = await markReminderAsDone(id);
-            return reply.status(200).send(completed);
-        } catch (error) {
-            return reply.status(500).send({ error: "Erro ao concluir lembrete" });
-        }
+    }, async (req: any, reply) => {
+        const { id } = req.params;
+        const completed = await markReminderAsDone(id);
+        return reply.status(200).send(completed);
     });
 }

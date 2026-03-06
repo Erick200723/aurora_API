@@ -2,7 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { createElderSchema } from './elder.schemas.js';
-import { CreateElder, getEldersByChief, deletElder,UpdateElder } from './elder.service.js';
+import { CreateElder, getEldersByChief, deletElder,UpdateElder,} from './elder.service.js';
+import { getLogsByChief } from '../atividades/atividades.service.js';
 import { authenticate } from '../../hooks/authenticate.js';
 
 export default async function elderRoutes(fastify: FastifyInstance) {
@@ -12,18 +13,16 @@ export default async function elderRoutes(fastify: FastifyInstance) {
     preHandler: [authenticate], 
     schema: {
       security: [{ bearerAuth: [] }],
-      body: createElderSchema,
+      body: createElderSchema.extend({
+        typePlanetLife: z.string().optional() 
+      }),
       tags: ['Elder'],
       description: 'Cadastra um idoso e vincula um login'
     }
   }, async (request) => {
     return CreateElder({
-      ...request.body, chiefId: request.user.id,
-      bloodType: '',
-      allergies: [],
-      phone: '',
-      observations: '',
-      address: ''
+      ...request.body, 
+      chiefId: request.user.id,
     });
   });
 
@@ -43,7 +42,7 @@ export default async function elderRoutes(fastify: FastifyInstance) {
     schema: {
       security: [{ bearerAuth: [] }],
       tags: ['Elder'],
-      params: z.object({ // CORREÇÃO: Zod no lugar de JSON manual
+      params: z.object({ 
         id: z.string()
       }),
       description: "Remove um idoso e sua conta de acesso vinculada"
@@ -53,7 +52,6 @@ export default async function elderRoutes(fastify: FastifyInstance) {
     return deletElder(id, req.user.id);
   });
 
-  // Adicione dentro de elderRoutes:
 
   app.patch('/:id', {
     preHandler: [authenticate],
@@ -69,6 +67,7 @@ export default async function elderRoutes(fastify: FastifyInstance) {
         emergencyContact: z.string().optional(),
         address: z.string().optional(),
         phone: z.string().optional(),
+        typePlanetLife: z.string().optional(), // NOVO CAMPO ADICIONADO
       }),
       tags: ['Elder'],
       description: 'Atualiza a ficha médica do idoso'
@@ -76,5 +75,16 @@ export default async function elderRoutes(fastify: FastifyInstance) {
   }, async (request) => {
     const { id } = request.params as { id: string };
     return UpdateElder(id, request.user.id, request.body);
+  });
+
+  app.get('/logs', {
+    preHandler: [authenticate],
+    schema: {
+      security: [{ bearerAuth: [] }],
+      tags: ['Elder'],
+      description: 'Busca o histórico de atividades do Admin'
+    }
+  }, async (req) => {
+    return getLogsByChief(req.user.id);
   });
 }

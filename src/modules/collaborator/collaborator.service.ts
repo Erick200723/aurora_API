@@ -64,6 +64,15 @@ export async function registerCollaborator(data: any) {
         chiefId: elder.chiefId
       }
     });
+
+    await tx.activity.create({
+      data: {
+        usuario: elder.chief.name,
+        acao: `Adicionou ${collaboratorUser.name} como colaborador de ${elder.name}`,
+        tipo: 'admin',
+        vinculoId: elder.chiefId
+      }
+    })
     
     const code = generateOTP();
     await tx.verificationCode.create({

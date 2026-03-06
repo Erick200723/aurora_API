@@ -13,6 +13,7 @@ export async function CreateElder(data: CreateElderInput) {
   if (exists) {
     throw new Error('Elder with this CPF already exists');
   }
+  
 
   return await prisma.$transaction(async (tx) => {
     
@@ -49,12 +50,22 @@ export async function CreateElder(data: CreateElderInput) {
         address: data.address,
         emergencyContact: data.emergencyContact || "",
         chiefId: data.chiefId,
+        typePlanetLife: data.typePlanetLife,
         bloodType: data.bloodType,
         allergies: data.allergies ?? [],
         medicalConditions: data.medicalConditions ?? [],
         medications: data.medications ?? [],
         observations: data.observations,
         ...(data.birthData && { birthData: new Date(data.birthData) })
+      }
+    });
+
+    await tx.activity.create({
+      data: {
+        usuario: chief.name,
+        acao: `Cadastrou o idoso ${elder.name}`,
+        tipo: 'admin',
+        vinculoId: data.chiefId
       }
     });
 
