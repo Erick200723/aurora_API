@@ -30,13 +30,33 @@ model User {
   payments Payment[]
 }
 // Idosos cadastrados no sistema
-fastify.patch('/complete-reminder/:id', {
-        schema: { tags: ["Lembretes"] }
-    }, async (req: any, reply) => {
-        const { id } = req.params;
-        const completed = await markReminderAsDone(id);
-        return reply.status(200).send(completed);
-    });
+model Elder {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  cpf               String   @unique
+  name              String
+  age               Int
+  birthData         DateTime?
+  phone             String?   
+  address           String?   
+  bloodType         String?   
+  emergencyContact  String?   
+  allergies         String[]  
+  medicalConditions String[]
+  medications       String[]
+  observations      String?
+  typePlanetLife    String?   
+  createdAt         DateTime @default(now())
+
+  chiefId String @db.ObjectId
+  chief   User   @relation("ChiefElders", fields: [chiefId], references: [id])
+
+  userAccount User[] @relation("UserToElder")
+
+  collaborators Collaborator[]
+  reminders     Reminder[]
+  emergencies   Emergency[]
+  audios        Audio[]
+}
 
 // Tabela de ligação para Colaboradores (Cuidadores extras)
 model Collaborator {
@@ -126,9 +146,9 @@ model Payment {
 }
 model Activity {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  usuario   String   
-  acao      String   
-  tipo      String   
-  vinculoId String  
+  usuario   String?
+  acao      String?  
+  tipo      String?  
+  vinculoId String?
   timestamp DateTime @default(now())
 }
