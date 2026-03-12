@@ -67,7 +67,7 @@ export default async function elderRoutes(fastify: FastifyInstance) {
         emergencyContact: z.string().optional(),
         address: z.string().optional(),
         phone: z.string().optional(),
-        typePlanetLife: z.string().optional(), // NOVO CAMPO ADICIONADO
+        typePlanetLife: z.string().optional(), 
       }),
       tags: ['Elder'],
       description: 'Atualiza a ficha médica do idoso'

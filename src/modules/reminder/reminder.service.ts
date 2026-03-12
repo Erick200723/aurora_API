@@ -1,4 +1,4 @@
-import {PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { createLog } from '../atividades/atividades.service.js';
 const prisma = new PrismaClient();
 
@@ -29,71 +29,71 @@ export async function createReminder(data: {
 
   return reminder;
 }
+
 /**
- * BUSCA OS LEMBRETES DO DIA (Máximo 3, como você pediu)
+ * CORREÇÃO 1 e 2: Retorna TODOS os lembretes do dia sem esconder os concluídos e sem limite
  */
 export async function getDailyReminders(elderId: string) {
-  // Pegar o dia da semana atual (0-6, onde 0 é Domingo)
-  // Se seu front usa 1 para Segunda e 7 para Domingo:
   const dataAtual = new Date();
   let hoje = dataAtual.getDay(); 
-  if (hoje === 0) hoje = 7; // Ajusta Domingo de 0 para 7 se necessário
+  if (hoje === 0) hoje = 7; 
 
   return prisma.reminder.findMany({
     where: {
       elderId: elderId,
-      isCompleted: false,
+      // REMOVIDO o isCompleted: false daqui. Agora ele manda pendentes e concluídos.
       daysOfWeek: {
-        has: hoje // Verifica se o dia de hoje está dentro do array [1,2,3...]
+        has: hoje 
       }
     },
-    take: 3, // Limite de 3 para não poluir a dash
+    // REMOVIDO o take: 3 daqui. Agora a lista não tem limite!
     orderBy: {
-      time: 'asc' // Ordenar por horário (ex: 08:00 antes de 12:00)
+      time: 'asc' 
     }
   });
 }
 
 /**
- * MARCAR COMO CONCLUÍDO
- * Essencial para a sua lógica de "limpeza" e reciclagem
+ * CORREÇÃO 3: Proteção contra quebra no DB e no Log
  */
 export async function markReminderAsDone(reminderId: string) {
   const reminder = await prisma.reminder.update({
     where: { id: reminderId },
     include: { elder: true }, 
     data: { 
-      isCompleted: true,
-      lastDone: new Date() 
+      isCompleted: true
+      // REMOVIDO o lastDone. Se não estava no seu schema.prisma, era isso que bloqueava o banco!
     }
   });
 
-  await createLog({
-      usuario: reminder.elder.name,
-      acao: `Concluiu o lembrete: "${reminder.title}"`,
-      tipo: 'idoso',
-      vinculoId: reminder.elder.chiefId
-    });
-
-    return reminder;
+  // Try/Catch no log: Se faltar alguma info no usuário, o lembrete continua sendo concluído
+  try {
+      if (reminder.elder) {
+          await createLog({
+              usuario: reminder.elder.name || "Idoso",
+              acao: `Concluiu o lembrete: "${reminder.title}"`,
+              tipo: 'idoso',
+              vinculoId: reminder.elder.chiefId || reminder.elderId
+          });
+      }
+  } catch (err) {
+      console.error("Aviso: Falha ao gerar log de conclusão, mas lembrete foi salvo.", err);
   }
+
+  return reminder;
+}
 
 export async function dailyResetReminders() {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
-  // 1. Notificar quem não completou (Lógica de negócio)
   const pendentes = await prisma.reminder.findMany({
     where: { isCompleted: false }
   });
-  // Aqui você dispararia o e-mail via Brevo informando o chefe...
 
-  // 2. Resetar todos para o novo dia
-  // Isso limpa o status "concluído" para que eles apareçam de novo hoje
   await prisma.reminder.updateMany({
     where: {
       isCompleted: true,
-      // Opcional: apenas se o lastDone for menor que hoje (ou seja, de ontem)
     },
     data: {
       isCompleted: false
@@ -103,10 +103,6 @@ export async function dailyResetReminders() {
   console.log("Banco reciclado para o novo dia!");
 }
 
-/**
- * ATUALIZAR UM LEMBRETE
- * Permite editar o título, horário ou o tipo
- */
 export async function updateReminder(id: string, data: any, userName: string, chiefId: string) {
   const updated = await prisma.reminder.update({
     where: { id: id },
@@ -123,9 +119,6 @@ export async function updateReminder(id: string, data: any, userName: string, ch
   return updated;
 }
 
-/**
- * EXCLUIR UM LEMBRETE
- */
 export async function deleteReminder(id: string, userName: string, chiefId: string) {
   const deleted = await prisma.reminder.delete({
     where: { id: id },
