@@ -30,9 +30,6 @@ export async function createReminder(data: {
   return reminder;
 }
 
-/**
- * CORREÇÃO 1 e 2: Retorna TODOS os lembretes do dia sem esconder os concluídos e sem limite
- */
 export async function getDailyReminders(elderId: string) {
   const dataAtual = new Date();
   let hoje = dataAtual.getDay(); 
@@ -41,32 +38,25 @@ export async function getDailyReminders(elderId: string) {
   return prisma.reminder.findMany({
     where: {
       elderId: elderId,
-      // REMOVIDO o isCompleted: false daqui. Agora ele manda pendentes e concluídos.
       daysOfWeek: {
         has: hoje 
       }
     },
-    // REMOVIDO o take: 3 daqui. Agora a lista não tem limite!
     orderBy: {
       time: 'asc' 
     }
   });
 }
 
-/**
- * CORREÇÃO 3: Proteção contra quebra no DB e no Log
- */
 export async function markReminderAsDone(reminderId: string) {
   const reminder = await prisma.reminder.update({
     where: { id: reminderId },
     include: { elder: true }, 
     data: { 
       isCompleted: true
-      // REMOVIDO o lastDone. Se não estava no seu schema.prisma, era isso que bloqueava o banco!
     }
   });
 
-  // Try/Catch no log: Se faltar alguma info no usuário, o lembrete continua sendo concluído
   try {
       if (reminder.elder) {
           await createLog({
